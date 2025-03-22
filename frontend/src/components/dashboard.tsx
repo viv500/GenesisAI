@@ -230,7 +230,7 @@ export default function Dashboard() {
             path: [...path],
             sticky: {
               title: title,
-              description: content // Use description instead of content for backend
+              description: content
             }
           }),
         });
