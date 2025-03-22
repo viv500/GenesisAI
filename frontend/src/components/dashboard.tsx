@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -12,7 +10,6 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { Timeline } from "@/components/timeline"
 import type { Note, BusinessSector, TimelineCheckpoint } from "@/lib/types"
 import { generateUniqueId } from "@/lib/utils"
-import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 
 export default function Dashboard() {
   // Timeline state
@@ -28,6 +25,7 @@ export default function Dashboard() {
   
   // Track the highest z-index for notes
   const [highestZIndex, setHighestZIndex] = useState(1)
+  
   const [canvasHierarchy, setCanvasHierarchy] = useState<Record<string, Record<string, Note[]>>>({
     "cp-1": {
       root: [
@@ -41,6 +39,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: null,
+          zIndex: 1,
         },
         {
           id: "note-2",
@@ -52,6 +51,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: null,
+          zIndex: 1,
         },
         {
           id: "note-3",
@@ -63,6 +63,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: null,
+          zIndex: 1,
         },
         {
           id: "note-4",
@@ -74,6 +75,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: null,
+          zIndex: 1,
         },
       ],
       "note-1": [
@@ -87,6 +89,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: "note-1",
+          zIndex: 1,
         },
         {
           id: "note-1-2",
@@ -98,6 +101,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: "note-1",
+          zIndex: 1,
         },
       ],
     },
@@ -113,6 +117,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: null,
+          zIndex: 1,
         },
         {
           id: "note-6",
@@ -124,6 +129,7 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: null,
+          zIndex: 1,
         },
       ],
     },
@@ -139,10 +145,90 @@ export default function Dashboard() {
           selected: false,
           files: [],
           parentId: null,
+          zIndex: 1,
         },
       ],
     },
   })
+
+  const [path, setPath] = useState<string[]>([]);
+
+  const getCurrentParentId = () => path.length > 0 ? path[path.length - 1] : "root";
+
+  const handleOpenNestedCanvas = (noteId: string, noteTitle: string) => {
+    // Add to navigation path
+    setPath([...path, noteTitle]);
+    
+    // Initialize empty canvas for the note if it doesn't exist
+    const updatedHierarchy = { ...canvasHierarchy };
+    if (!updatedHierarchy[activeCheckpoint][noteId]) {
+      updatedHierarchy[activeCheckpoint][noteId] = [];
+      setCanvasHierarchy(updatedHierarchy);
+    }
+  };
+
+  const handleNavigateBack = () => {
+    if (path.length > 0) {
+      setPath(path.slice(0, -1));
+    }
+  };
+
+  const handleAddNote = async () => {
+    const sectors: BusinessSector[] = ["inventory", "manufacturing", "product", "human", "marketing", "financial"];
+    const colors = ["bg-yellow-200", "bg-blue-200", "bg-green-200", "bg-purple-200", "bg-red-200", "bg-indigo-200"];
+
+    const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
+    const sectorIndex = sectors.indexOf(randomSector);
+    const newZIndex = highestZIndex + 1;
+
+    const newNote: Note = {
+      id: generateUniqueId(),
+      title: randomSector.charAt(0).toUpperCase() + randomSector.slice(1),
+      content: "Click to edit this note and add your business information.",
+      position: { x: 200, y: 200 },
+      color: colors[sectorIndex],
+      sector: randomSector,
+      selected: false,
+      files: [],
+      parentId: getCurrentParentId(),
+      zIndex: newZIndex,
+    };
+
+    try {
+      // Update backend
+      const response = await fetch("/api/add-sticky", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: [...path],
+          sticky: newNote
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to save to backend");
+
+      // Update frontend state
+      const currentCanvasId = getCurrentParentId();
+      const updatedHierarchy = { ...canvasHierarchy };
+      
+      if (!updatedHierarchy[activeCheckpoint][currentCanvasId]) {
+        updatedHierarchy[activeCheckpoint][currentCanvasId] = [];
+      }
+
+      updatedHierarchy[activeCheckpoint][currentCanvasId] = [
+        ...updatedHierarchy[activeCheckpoint][currentCanvasId],
+        newNote,
+      ];
+
+      setCanvasHierarchy(updatedHierarchy);
+      setHighestZIndex(newZIndex);
+      toast.success(`A new ${newNote.title} note has been added`);
+
+    } catch (error) {
+      console.error("Failed to add note:", error);
+      toast.error("Failed to save note. Please try again.");
+    }
+  };
 
   // Get current notes based on active checkpoint and canvas
   const getCurrentNotes = (): Note[] => {
@@ -167,47 +253,6 @@ export default function Dashboard() {
     setCanvasHierarchy(updatedHierarchy)
   }, [checkpoints])
 
-  const handleAddNote = () => {
-    const sectors: BusinessSector[] = ["inventory", "manufacturing", "product", "human", "marketing", "financial"]
-    const colors = ["bg-yellow-200", "bg-blue-200", "bg-green-200", "bg-purple-200", "bg-red-200", "bg-indigo-200"]
-
-    const randomSector = sectors[Math.floor(Math.random() * sectors.length)]
-    const sectorIndex = sectors.indexOf(randomSector)
-
-    // Increment the highest z-index for the new note
-    const newZIndex = highestZIndex + 1
-    setHighestZIndex(newZIndex)
-
-    const newNote: Note = {
-      id: generateUniqueId(),
-      title: randomSector.charAt(0).toUpperCase() + randomSector.slice(1),
-      content: "Click to edit this note and add your business information.",
-      position: { x: 200, y: 200 },
-      color: colors[sectorIndex],
-      sector: randomSector,
-      selected: false,
-      files: [],
-      parentId: canvasStack.length > 1 ? canvasStack[canvasStack.length - 2] : null,
-      zIndex: newZIndex, // Set the highest z-index for the new note
-    }
-
-    const currentCanvasId = canvasStack[canvasStack.length - 1]
-
-    // Update the hierarchy with the new note
-    const updatedHierarchy = { ...canvasHierarchy }
-    if (!updatedHierarchy[activeCheckpoint][currentCanvasId]) {
-      updatedHierarchy[activeCheckpoint][currentCanvasId] = []
-    }
-
-    updatedHierarchy[activeCheckpoint][currentCanvasId] = [
-      ...updatedHierarchy[activeCheckpoint][currentCanvasId],
-      newNote,
-    ]
-
-    setCanvasHierarchy(updatedHierarchy)
-
-    toast.success(`A new ${newNote.title} note has been added to your canvas.`)
-  }
 
   const handleNoteSelect = (id: string) => {
     const currentCanvasId = canvasStack[canvasStack.length - 1]
@@ -231,14 +276,6 @@ export default function Dashboard() {
 
   const handleNoteEdit = (id: string, updatedNote: Partial<Note>) => {
     const currentCanvasId = canvasStack[canvasStack.length - 1]
-
-    // If position is being updated, update the notePositions state first
-    if (updatedNote.position) {
-      setNotePositions(prev => ({
-        ...prev,
-        [id]: updatedNote.position!
-      }))
-    }
 
     const updatedHierarchy = { ...canvasHierarchy }
     updatedHierarchy[activeCheckpoint][currentCanvasId] = updatedHierarchy[activeCheckpoint][currentCanvasId].map(
@@ -276,24 +313,6 @@ export default function Dashboard() {
     }
 
     setIsAIChatOpen(true)
-  }
-
-  const handleOpenNestedCanvas = (noteId: string) => {
-    // Initialize empty canvas for the note if it doesn't exist
-    const updatedHierarchy = { ...canvasHierarchy }
-    if (!updatedHierarchy[activeCheckpoint][noteId]) {
-      updatedHierarchy[activeCheckpoint][noteId] = []
-      setCanvasHierarchy(updatedHierarchy)
-    }
-
-    // Navigate to the nested canvas
-    setCanvasStack([...canvasStack, noteId])
-  }
-
-  const handleNavigateBack = () => {
-    if (canvasStack.length > 1) {
-      setCanvasStack(canvasStack.slice(0, -1))
-    }
   }
 
   const handleAddCheckpoint = () => {
@@ -334,63 +353,8 @@ export default function Dashboard() {
   }
 
   const currentNotes = getCurrentNotes()
-  const currentCanvasTitle =
-    canvasStack.length > 1
-      ? currentNotes.length > 0
-        ? currentNotes[0].parentId
-          ? canvasHierarchy[activeCheckpoint][currentNotes[0].parentId]?.find(
-              (n) => n.id === canvasStack[canvasStack.length - 1],
-            )?.title
-          : "Nested Canvas"
-        : "Nested Canvas"
-      : "Main Canvas"
-
-  // State for tracking note positions during drag operations
-  const [notePositions, setNotePositions] = useState<Record<string, { x: number; y: number }>>({})
-
-  // Add DND sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5, // 5px of movement required before drag starts
-      },
-    }),
-  )
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active } = event
-
-    // Get the note ID
-    const noteId = active.id as string
-
-    // Find the note in current notes
-    const currentCanvasId = canvasStack[canvasStack.length - 1]
-    const noteIndex = canvasHierarchy[activeCheckpoint][currentCanvasId].findIndex((note) => note.id === noteId)
-
-    if (noteIndex !== -1) {
-      // Update note position based on transform
-      const note = canvasHierarchy[activeCheckpoint][currentCanvasId][noteIndex]
-
-      // Get transform from active.data.current
-      const transform = active.data?.current?.transform
-      if (transform) {
-        const newPosition = {
-          x: note.position.x + transform.x,
-          y: note.position.y + transform.y,
-        }
-
-        // Update both the notePositions state and the note in the hierarchy
-        setNotePositions(prev => ({
-          ...prev,
-          [noteId]: newPosition
-        }))
-        
-        // Update the note
-        handleNoteEdit(noteId, { position: newPosition })
-      }
-    }
-  }
-
+  const currentCanvasTitle = path.length > 0 ? path[path.length - 1] : "Main Canvas";
+  
   return (
     <div className="flex flex-col h-screen">
       <DashboardHeader
@@ -408,7 +372,7 @@ export default function Dashboard() {
 
       <div className="flex items-center px-4 py-2 bg-muted/30 border-y">
         <div className="flex items-center">
-          {canvasStack.length > 1 && (
+          {path.length > 0 && (
             <Button variant="ghost" size="sm" onClick={handleNavigateBack} className="mr-2">
               <ChevronLeft className="h-4 w-4 mr-1" />
               Back
@@ -416,56 +380,46 @@ export default function Dashboard() {
           )}
           <div className="flex items-center">
             <span className="text-sm font-medium">{currentCanvasTitle}</span>
-            {canvasStack.map((canvas, index) => {
-              if (index === 0) return null
-              const parentCanvas = index > 1 ? canvasStack[index - 1] : "root"
-              const canvasNote = canvasHierarchy[activeCheckpoint][parentCanvas]?.find((n) => n.id === canvas)
-              if (!canvasNote) return null
-              return (
-                <div key={canvas} className="flex items-center">
-                  <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
-                  <span className="text-sm font-medium">{canvasNote.title}</span>
-                </div>
-              )
-            })}
+            {path.map((title, index) => (
+              <div key={index} className="flex items-center">
+                <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
+                <span className="text-sm font-medium">{title}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div
-          ref={canvasRef}
-          className="flex-1 relative bg-gray-50 dark:bg-gray-900 overflow-auto"
-          style={{ minHeight: "calc(100vh - 160px)" }}
-        >
-          {currentNotes.map((note) => (
-            <StickyNote
-              key={note.id}
-              note={{
-                ...note,
-                // Use the position from notePositions state if available, otherwise use note's position
-                position: notePositions[note.id] || note.position,
-                // Make sure zIndex is included here
-                zIndex: note.zIndex || 1
-              }}
-              onSelect={() => handleNoteSelect(note.id)}
-              onEdit={(updatedNote) => handleNoteEdit(note.id, updatedNote)}
-              onDelete={() => handleNoteDelete(note.id)}
-              onOpen={() => handleOpenNestedCanvas(note.id)}
-            />
-          ))}
+      <div
+        ref={canvasRef}
+        className="flex-1 relative bg-gray-50 dark:bg-gray-900 overflow-auto"
+        style={{ minHeight: "calc(100vh - 160px)" }}
+      >
+        {currentNotes.map((note) => (
+          <StickyNote
+            key={note.id}
+            note={{
+              ...note,
+              // Make sure zIndex is included here
+              zIndex: note.zIndex || 1
+            }}
+            onSelect={() => handleNoteSelect(note.id)}
+            onEdit={(updatedNote) => handleNoteEdit(note.id, updatedNote)}
+            onDelete={() => handleNoteDelete(note.id)}
+            onOpen={() => handleOpenNestedCanvas(note.id, note.title)}
+          />
+        ))}
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
-            onClick={handleAddNote}
-          >
-            <Plus className="h-6 w-6" />
-            <span className="sr-only">Add Note</span>
-          </Button>
-        </div>
-      </DndContext>
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          onClick={handleAddNote}
+        >
+          <Plus className="h-6 w-6" />
+          <span className="sr-only">Add Note</span>
+        </Button>
+      </div>
 
       {isAIChatOpen && (
         <AIChat
@@ -477,58 +431,3 @@ export default function Dashboard() {
     </div>
   )
 }
-
-function NoteDetailView({ note, onUpdate }: { note: Note; onUpdate: (note: Partial<Note>) => void }) {
-  const [content, setContent] = useState(note.content)
-  const [files, setFiles] = useState<string[]>(note.files)
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value)
-  }
-
-  const handleSave = () => {
-    onUpdate({ content, files })
-  }
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files).map((file) => URL.createObjectURL(file))
-      setFiles([...files, ...newFiles])
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-2">Content</h3>
-        <textarea
-          className="w-full min-h-[200px] p-3 border rounded-md bg-background"
-          value={content}
-          onChange={handleContentChange}
-        />
-      </div>
-
-      <div>
-        <h3 className="text-lg font-medium mb-2">Files</h3>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {files.map((file, index) => (
-            <div key={index} className="border rounded p-2 flex items-center gap-2">
-              <span className="truncate max-w-[200px]">File {index + 1}</span>
-              <Button variant="ghost" size="sm" onClick={() => setFiles(files.filter((_, i) => i !== index))}>
-                Remove
-              </Button>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => document.getElementById("file-upload")?.click()}>
-            Upload Files
-          </Button>
-          <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} />
-          <Button onClick={handleSave}>Save Changes</Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
