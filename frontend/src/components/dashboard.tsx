@@ -241,7 +241,6 @@ export default function Dashboard() {
         }
       } catch (apiError) {
         console.warn("Backend API call failed, but continuing with frontend update:", apiError);
-        // Continue with frontend update even if backend fails
       }
 
       // Update frontend state
@@ -356,47 +355,41 @@ export default function Dashboard() {
     toast.success(`A new checkpoint "${newTitle}" has been added to the timeline.`);
   };
 
-  const handleApplyAIChanges = (updatedNotes: Note[]) => {
-    const currentCanvasId = canvasStack[canvasStack.length - 1];
-    const updatedHierarchy = { ...canvasHierarchy };
-    updatedNotes.forEach((updatedNote) => {
-      updatedHierarchy[activeCheckpoint][currentCanvasId] = updatedHierarchy[activeCheckpoint][currentCanvasId].map(
-        (note) => (note.id === updatedNote.id ? { ...note, ...updatedNote } : note),
-      );
-    });
+  // Updated: Function to update canvas hierarchy based on AI suggestions
+  const handleApplyAIChanges = (updatedHierarchy: Record<string, Record<string, Note[]>>) => {
     setCanvasHierarchy(updatedHierarchy);
     setIsAIChatOpen(false);
-    toast.success("AI suggestions applied to your notes!");
+    toast.success("Canvas hierarchy has been updated based on AI suggestions!");
   };
 
   // NEW: Function to update the canvas hierarchy by calling the backend API
   const handleChangeDetails = async () => {
-  try {
-    const response = await fetch("http://localhost:8000/api/updateCanvas", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ canvasHierarchy }),
-    });
-    if (!response.ok) {
-      throw new Error("Failed to update canvas details");
-    }
-    const updatedHierarchy = await response.json();
-    setCanvasHierarchy(updatedHierarchy);
+    try {
+      const response = await fetch("http://localhost:8000/api/updateCanvas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ canvasHierarchy }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update canvas details");
+      }
+      const updatedHierarchy = await response.json();
+      setCanvasHierarchy(updatedHierarchy);
 
-    // Set active checkpoint to the first key in the updated hierarchy
-    const checkpointIds = Object.keys(updatedHierarchy);
-    if (checkpointIds.length > 0) {
-      setActiveCheckpoint(checkpointIds[0]);
-    }
+      // Optionally, set active checkpoint to the first key in the updated hierarchy
+      const checkpointIds = Object.keys(updatedHierarchy);
+      if (checkpointIds.length > 0) {
+        setActiveCheckpoint(checkpointIds[0]);
+      }
 
-    toast.success("Canvas details updated!");
-  } catch (error) {
-    console.error("API error:", error);
-    toast.error("Failed to update canvas details.");
-  }
-};
+      toast.success("Canvas details updated!");
+    } catch (error) {
+      console.error("API error:", error);
+      toast.error("Failed to update canvas details.");
+    }
+  };
 
   const currentNotes = getCurrentNotes();
   const currentCanvasTitle = path.length > 0 ? path[path.length - 1] : "Main Canvas";
@@ -484,6 +477,7 @@ export default function Dashboard() {
 
       {isAIChatOpen && (
         <AIChat
+          currentHierarchy={canvasHierarchy}
           selectedNotes={currentNotes.filter((note) => note.selected)}
           onClose={() => setIsAIChatOpen(false)}
           onApplyChanges={handleApplyAIChanges}

@@ -1,75 +1,101 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { X, Send, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import type { Note } from "@/lib/types"
+import type React from "react";
+import { useState, useRef, useEffect } from "react";
+import { X, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import type { Note } from "@/lib/types";
 
 interface AIChatProps {
-  selectedNotes: Note[]
-  onClose: () => void
-  onApplyChanges: (notes: Note[]) => void
+  selectedNotes: Note[];
+  onClose: () => void;
+  onApplyChanges: (updatedHierarchy: Record<string, Record<string, Note[]>>) => void;
+  currentHierarchy: Record<string, Record<string, Note[]>>; // new prop for the current hierarchy
 }
 
 interface Message {
-  role: "user" | "assistant"
-  content: string
+  role: "user" | "assistant";
+  content: string;
 }
 
-export function AIChat({ selectedNotes, onClose, onApplyChanges }: AIChatProps) {
+export function AIChat({ selectedNotes, onClose, onApplyChanges, currentHierarchy }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: `I'm your AI business assistant. I can help analyze and provide insights based on your selected business areas: ${selectedNotes.map((note) => note.title).join(", ")}. How can I help you today?`,
+      content: `I'm your AI business assistant. I can help analyze and provide insights based on your selected business areas: ${selectedNotes
+        .map((note) => note.title)
+        .join(", ")}. How can I help you today?`,
     },
-  ])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [suggestedChanges, setSuggestedChanges] = useState<Note[]>([])
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  ]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestedChanges, setSuggestedChanges] = useState<Note[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
 
     const userMessage: Message = {
       role: "user",
       content: input,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      // Immediate assistant response to give feedback
+      const aiMessage: Message = {
+        role: "assistant",
+        content: "I am processing your request and updating the canvas hierarchy.",
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+
+      // Send both the question and the current canvas hierarchy to the endpoint
+      const response = await fetch("http://localhost:8000/api/update-hierarchy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: input,
+          canvasHierarchy: currentHierarchy,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update hierarchy");
+      }
+
+      const updatedHierarchy = await response.json();
+      
+      // Update hierarchy after AI response
+      onApplyChanges(updatedHierarchy);
+    } catch (error) {
+      console.error(error);
+      const errorMessage: Message = {
+        role: "assistant",
+        content: "Sorry, there was an error processing your request.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
-
-    setMessages([...messages, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(input, selectedNotes)
-      setMessages((prev) => [...prev, { role: "assistant", content: aiResponse.message }])
-      setSuggestedChanges(aiResponse.suggestions)
-      setIsLoading(false)
-    }, 1500)
-  }
-
-  const handleApplyChanges = () => {
-    onApplyChanges(suggestedChanges)
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
+      e.preventDefault();
+      handleSendMessage();
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -113,7 +139,7 @@ export function AIChat({ selectedNotes, onClose, onApplyChanges }: AIChatProps) 
                 </div>
               ))}
             </div>
-            <Button onClick={handleApplyChanges}>Apply Changes</Button>
+            <Button onClick={() => onApplyChanges({})}>Apply Changes</Button>
           </div>
         )}
 
@@ -131,76 +157,5 @@ export function AIChat({ selectedNotes, onClose, onApplyChanges }: AIChatProps) 
         </div>
       </div>
     </div>
-  )
+  );
 }
-
-// Simulate AI response generation
-function generateAIResponse(input: string, selectedNotes: Note[]): { message: string; suggestions: Note[] } {
-  const lowerInput = input.toLowerCase()
-
-  // Create a copy of the notes to modify
-  const suggestions = JSON.parse(JSON.stringify(selectedNotes)) as Note[]
-
-  let message = ""
-
-  if (lowerInput.includes("improve") || lowerInput.includes("optimize")) {
-    message = "Based on my analysis of your selected business areas, here are some optimization suggestions:\n\n"
-
-    suggestions.forEach((note) => {
-      if (note.sector === "inventory") {
-        note.content +=
-          "\n\nAI Suggestion: Consider implementing a just-in-time inventory system to reduce holding costs and improve cash flow."
-      } else if (note.sector === "manufacturing") {
-        note.content +=
-          "\n\nAI Suggestion: Analyze production bottlenecks and implement lean manufacturing principles to increase throughput by 15-20%."
-      } else if (note.sector === "product") {
-        note.content +=
-          "\n\nAI Suggestion: Conduct customer interviews to identify unmet needs and prioritize your product roadmap accordingly."
-      } else if (note.sector === "human") {
-        note.content +=
-          "\n\nAI Suggestion: Implement regular skill development programs and create clear career progression paths to improve employee retention."
-      }
-    })
-
-    message += suggestions.map((note) => `• ${note.title}: ${note.content.split("\n\nAI Suggestion:")[1]}`).join("\n\n")
-    message += "\n\nWould you like me to apply these suggestions to your notes?"
-  } else if (lowerInput.includes("analyze") || lowerInput.includes("insights")) {
-    message = "Here's my analysis of your selected business areas:\n\n"
-
-    suggestions.forEach((note) => {
-      if (note.sector === "inventory") {
-        note.content +=
-          "\n\nAI Analysis: Your inventory management could benefit from demand forecasting algorithms to reduce stockouts and overstock situations."
-      } else if (note.sector === "manufacturing") {
-        note.content +=
-          "\n\nAI Analysis: Consider implementing predictive maintenance to reduce downtime and extend equipment lifespan."
-      } else if (note.sector === "product") {
-        note.content +=
-          "\n\nAI Analysis: Your product strategy should include competitive analysis and market trend monitoring to stay ahead."
-      } else if (note.sector === "human") {
-        note.content +=
-          "\n\nAI Analysis: Employee engagement surveys and regular feedback sessions can help identify areas for improvement in your human operations."
-      }
-    })
-
-    message += suggestions.map((note) => `• ${note.title}: ${note.content.split("\n\nAI Analysis:")[1]}`).join("\n\n")
-    message += "\n\nWould you like me to apply these insights to your notes?"
-  } else {
-    message = "I've analyzed your selected business areas and have some general recommendations:\n\n"
-
-    suggestions.forEach((note) => {
-      note.content += `\n\nAI Recommendation: Based on industry best practices, consider reviewing and updating your ${note.title.toLowerCase()} strategies quarterly to stay competitive.`
-    })
-
-    message += suggestions
-      .map(
-        (note) =>
-          `• ${note.title}: Regular review and optimization of processes can lead to significant efficiency gains.`,
-      )
-      .join("\n\n")
-    message += "\n\nWould you like me to add these recommendations to your notes?"
-  }
-
-  return { message, suggestions }
-}
-

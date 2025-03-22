@@ -2,11 +2,15 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from models import StickyNote, StickyNoteTree
+import json
+import google.generativeai as genai
+import os
 from datetime import datetime
 import time
 
 # Create an instance of the FastAPI class
 app = FastAPI()
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
@@ -33,6 +37,7 @@ class DeleteStickyNoteRequest(BaseModel):
 
 class SpeechToTextRequest(BaseModel):
     text: str
+
 class CanvasHierarchyModel(BaseModel):
     canvasHierarchy: Dict[str, Dict[str, List[Any]]]
 
@@ -226,9 +231,6 @@ def process_speech_to_text(data: SpeechToTextRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing speech-to-text: {str(e)}")
 
-
-class BusinessInfo(BaseModel):
-    businessInfo: str
 class BusinessInfo(BaseModel):
     businessInfo: str
 
@@ -239,179 +241,263 @@ async def analyze_business(data: BusinessInfo):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class CanvasHierarchyModel(BaseModel):
-    canvasHierarchy: Dict[str, Dict[str, List[Any]]]
-
 @app.post("/api/updateCanvas")
 async def update_canvas(data: CanvasHierarchyModel):
     try:
         # Define the new hierarchy structure
         new_canvas_hierarchy = {
-  "cp-1": {
-    "root": [
-      {
-        "id": "note-1",
-        "title": "Inventory",
-        "content": "Track and manage your inventory levels, suppliers, and procurement processes.",
-        "position": { "x": 100, "y": 100 },
-        "color": "bg-yellow-200",
-        "sector": "inventory",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      },
-      {
-        "id": "note-2",
-        "title": "Manufacturing",
-        "content": "Monitor production processes, quality control, and operational efficiency.",
-        "position": { "x": 400, "y": 100 },
-        "color": "bg-blue-200",
-        "sector": "manufacturing",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      },
-      {
-        "id": "note-3",
-        "title": "Product Strategy",
-        "content": "Plan product roadmaps, feature development, and market positioning.",
-        "position": { "x": 100, "y": 350 },
-        "color": "bg-green-200",
-        "sector": "product",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      },
-      {
-        "id": "note-4",
-        "title": "Human Operations",
-        "content": "Manage recruitment, training, performance, and employee engagement.",
-        "position": { "x": 400, "y": 350 },
-        "color": "bg-purple-200",
-        "sector": "human",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      },
-      {
-        "id": "note-5",
-        "title": "please please please",
-        "content": "sabrina carpenter",
-        "position": { "x": 800, "y": 350 },
-        "color": "bg-purple-200",
-        "sector": "music",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      }
-    ],
-    "note-1": [
-      {
-        "id": "note-1-1",
-        "title": "Suppliers",
-        "content": "List of key suppliers and contact information.",
-        "position": { "x": 100, "y": 100 },
-        "color": "bg-yellow-100",
-        "sector": "inventory",
-        "selected": False,
-        "files": [],
-        "parentId": "note-1",
-        "zIndex": 1
-      },
-      {
-        "id": "note-1-2",
-        "title": "Stock Levels",
-        "content": "Current inventory levels and reorder points.",
-        "position": { "x": 400, "y": 100 },
-        "color": "bg-yellow-100",
-        "sector": "inventory",
-        "selected": False,
-        "files": [],
-        "parentId": "note-1",
-        "zIndex": 1
-      }
-    ],
-    "note-5": [
-      {
-        "id": "note-1-1",
-        "title": "Suppliers",
-        "content": "List of key suppliers and contact information.",
-        "position": { "x": 100, "y": 100 },
-        "color": "bg-yellow-100",
-        "sector": "inventory",
-        "selected": False,
-        "files": [],
-        "parentId": "note-1",
-        "zIndex": 1
-      },
-      {
-        "id": "note-1-2",
-        "title": "Stock Levels",
-        "content": "Current inventory levels and reorder points.",
-        "position": { "x": 400, "y": 100 },
-        "color": "bg-yellow-100",
-        "sector": "inventory",
-        "selected": False,
-        "files": [],
-        "parentId": "note-1",
-        "zIndex": 1
-      }
-    ]
-  },
-  "cp-2": {
-    "root": [
-      {
-        "id": "note-5",
-        "title": "Inventory",
-        "content": "Updated inventory management system implemented.",
-        "position": { "x": 100, "y": 100 },
-        "color": "bg-yellow-200",
-        "sector": "inventory",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      },
-      {
-        "id": "note-6",
-        "title": "Manufacturing",
-        "content": "New production line added, increasing capacity by 30%.",
-        "position": { "x": 400, "y": 100 },
-        "color": "bg-blue-200",
-        "sector": "manufacturing",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      }
-    ]
-  },
-  "cp-3": {
-    "root": [
-      {
-        "id": "note-7",
-        "title": "Product Strategy",
-        "content": "New product line launched, targeting enterprise customers.",
-        "position": { "x": 100, "y": 100 },
-        "color": "bg-green-200",
-        "sector": "product",
-        "selected": False,
-        "files": [],
-        "parentId": None,
-        "zIndex": 1
-      }
-    ]
-  }
-}
-
-
-
+            "cp-1": {
+                "root": [
+                    {
+                        "id": "note-1",
+                        "title": "Inventory",
+                        "content": "Track and manage your inventory levels, suppliers, and procurement processes.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-200",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-2",
+                        "title": "Manufacturing",
+                        "content": "Monitor production processes, quality control, and operational efficiency.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-blue-200",
+                        "sector": "manufacturing",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-3",
+                        "title": "Product Strategy",
+                        "content": "Plan product roadmaps, feature development, and market positioning.",
+                        "position": {"x": 100, "y": 350},
+                        "color": "bg-green-200",
+                        "sector": "product",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-4",
+                        "title": "Human Operations",
+                        "content": "Manage recruitment, training, performance, and employee engagement.",
+                        "position": {"x": 400, "y": 350},
+                        "color": "bg-purple-200",
+                        "sector": "human",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-5",
+                        "title": "please please please",
+                        "content": "sabrina carpenter",
+                        "position": {"x": 800, "y": 350},
+                        "color": "bg-purple-200",
+                        "sector": "music",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    }
+                ],
+                "note-1": [
+                    {
+                        "id": "note-1-1",
+                        "title": "Suppliers",
+                        "content": "List of key suppliers and contact information.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-1-2",
+                        "title": "Stock Levels",
+                        "content": "Current inventory levels and reorder points.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    }
+                ],
+                "note-5": [
+                    {
+                        "id": "note-1-1",
+                        "title": "Suppliers",
+                        "content": "List of key suppliers and contact information.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-1-2",
+                        "title": "Stock Levels",
+                        "content": "Current inventory levels and reorder points.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    }
+                ]
+            },
+            "cp-2": {
+                "root": [
+                    {
+                        "id": "note-5",
+                        "title": "Inventory",
+                        "content": "Updated inventory management system implemented.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-200",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-6",
+                        "title": "Manufacturing",
+                        "content": "New production line added, increasing capacity by 30%.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-blue-200",
+                        "sector": "manufacturing",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    }
+                ]
+            },
+            "cp-3": {
+                "root": [
+                    {
+                        "id": "note-7",
+                        "title": "Product Strategy",
+                        "content": "New product line launched, targeting enterprise customers.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-green-200",
+                        "sector": "product",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    }
+                ]
+            }
+        }
         # Return the new structure instead of modifying the incoming one
         return new_canvas_hierarchy
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# NEW: Endpoint to update canvas hierarchy based on a user question
+class UpdateHierarchyRequest(BaseModel):
+    question: str  # Changed from 'question' to match frontend
+    canvasHierarchy: Dict[str, Dict[str, List[Dict]]]  # More specific typing
+
+# Configure Gemini
+genai.configure(api_key="AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU")
+model = genai.GenerativeModel('gemini-1.5-pro')
+
+@app.post("/api/update-hierarchy")
+async def update_hierarchy(data: UpdateHierarchyRequest):
+    try:
+        # Craft precision prompt with examples and constraints
+        prompt = f"""**Objective**: Modify the provided canvas hierarchy EXACTLY according to the user's request while maintaining all existing structure, relationships, and formatting rules.
+
+[Keep the same prompt content you originally had, just change the field references to use data.question and data.canvasHierarchy]
+
+**Response Requirements**:
+- Only valid JSON matching exact existing structure
+- No explanations or markdown
+- Full hierarchy must be returned
+- Ensure all existing data is preserved"""
+
+        # Debug: Log the prompt being sent to Gemini
+        print(f"Sending prompt to Gemini:\n{prompt[:500]}...")  # Log first 500 chars
+
+        # Get Gemini response with safety settings
+        response = model.generate_content(
+            prompt,
+            safety_settings={
+                'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
+                'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
+                'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
+                'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE'
+            }
+        )
+
+        # Debug: Log raw response
+        print(f"Raw Gemini response: {response.text}")
+
+        # Improved JSON cleaning
+        cleaned_response = response.text.strip()
+        for wrapper in ['```json', '```', 'JSON:', '```JSON']:
+            if cleaned_response.startswith(wrapper):
+                cleaned_response = cleaned_response[len(wrapper):].strip()
+            if cleaned_response.endswith(wrapper):
+                cleaned_response = cleaned_response[:-len(wrapper)].strip()
+
+        # Debug: Log cleaned response
+        print(f"Cleaned response: {cleaned_response[:500]}...")
+
+        # Parse JSON with better error handling
+        try:
+            updated_hierarchy = json.loads(cleaned_response)
+        except json.JSONDecodeError as e:
+            print(f"JSON parse error: {str(e)}")
+            raise ValueError(f"Invalid JSON response from AI: {str(e)}")
+
+        # Comprehensive validation
+        if not isinstance(updated_hierarchy, dict):
+            raise ValueError("AI response is not a dictionary")
+
+        for checkpoint_id, checkpoint_data in updated_hierarchy.items():
+            if not checkpoint_id.startswith('cp-'):
+                raise ValueError(f"Invalid checkpoint ID format: {checkpoint_id}")
+            if not isinstance(checkpoint_data, dict):
+                raise ValueError(f"Checkpoint {checkpoint_id} data is not a dictionary")
+            
+            for parent_id, notes in checkpoint_data.items():
+                if not isinstance(notes, list):
+                    raise ValueError(f"Notes in {checkpoint_id}/{parent_id} are not a list")
+                
+                for note in notes:
+                    if 'id' not in note or not note['id'].startswith('note-'):
+                        raise ValueError(f"Invalid note ID in {checkpoint_id}/{parent_id}")
+                    if 'parentId' in note and note['parentId'] and not note['parentId'].startswith('note-'):
+                        raise ValueError(f"Invalid parentId in note {note['id']}")
+
+        # Debug: Log successful validation
+        print("Successfully validated updated hierarchy")
+
+        return updated_hierarchy
+
+    except Exception as e:
+        error_detail = f"AI processing failed: {str(e)}"
+        if 'response' in locals():
+            error_detail += f"\nGemini response: {response.text[:500]}..."
+        print(error_detail)  # Log full error to server console
+        raise HTTPException(status_code=500, detail=error_detail)
