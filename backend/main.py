@@ -21,6 +21,15 @@ tree = StickyNoteTree()
 class StickyNoteRequest(BaseModel):
     path: List[str]
     sticky: dict
+
+class EditStickyNoteRequest(BaseModel):
+    path: List[str]
+    title: str
+    description: str
+
+class DeleteStickyNoteRequest(BaseModel):
+    path: List[str]
+
 # Define a root endpoint
 @app.get("/")
 def read_root():
@@ -39,6 +48,123 @@ def add_sticky(data: StickyNoteRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.put("/api/edit-sticky")
+def edit_sticky(data: EditStickyNoteRequest):
+    """
+    Edit an existing sticky note's title and description.
+    The path parameter identifies which note to edit.
+    """
+    try:
+        # Print the received data for debugging
+        print(f"Edit request received: {data}")
+        
+        # Validate the path
+        if not data.path:
+            raise ValueError("Invalid path: empty path provided")
+            
+        # Traverse the tree to find the note
+        current = tree.root
+        
+        # If path is empty or just contains one element (like ["root"]), we're editing a top-level note
+        if len(data.path) <= 1:
+            # We're editing a direct child of root
+            title_to_edit = data.path[0] if data.path else None
+            if title_to_edit and title_to_edit in current.children:
+                note = current.children[title_to_edit]
+                # Update the note
+                old_title = note.title
+                note.title = data.title
+                note.description = data.description
+                
+                # If title changed, we need to update the key in the parent's children dict
+                if old_title != data.title:
+                    current.children[data.title] = note
+                    del current.children[old_title]
+                
+                return {"message": "Sticky note updated successfully"}
+            else:
+                raise ValueError(f"Note '{title_to_edit}' not found")
+        else:
+            # We're editing a nested note
+            # Navigate to the parent of the note to edit
+            for i in range(len(data.path) - 1):
+                level = data.path[i]
+                if level in current.children:
+                    current = current.children[level]
+                else:
+                    raise ValueError(f"Path '{level}' does not exist")
+            
+            # Now current is the parent of the note to edit
+            title_to_edit = data.path[-1]
+            if title_to_edit in current.children:
+                note = current.children[title_to_edit]
+                # Update the note
+                old_title = note.title
+                note.title = data.title
+                note.description = data.description
+                
+                # If title changed, we need to update the key in the parent's children dict
+                if old_title != data.title:
+                    current.children[data.title] = note
+                    del current.children[old_title]
+                
+                return {"message": "Sticky note updated successfully"}
+            else:
+                raise ValueError(f"Note '{title_to_edit}' not found")
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating sticky note: {str(e)}")
+
+@app.delete("/api/delete-sticky")
+def delete_sticky(data: DeleteStickyNoteRequest):
+    """
+    Delete a sticky note and all its children.
+    The path parameter identifies which note to delete.
+    """
+    try:
+        # Print the received data for debugging
+        print(f"Delete request received: {data}")
+        
+        # Validate the path
+        if not data.path:
+            raise ValueError("Cannot delete root note")
+            
+        # Traverse the tree to find the parent of the note to delete
+        current = tree.root
+        
+        # If path only contains one element, we're deleting a top-level note
+        if len(data.path) == 1:
+            title_to_delete = data.path[0]
+            if title_to_delete in current.children:
+                del current.children[title_to_delete]
+                return {"message": "Sticky note deleted successfully"}
+            else:
+                raise ValueError(f"Note '{title_to_delete}' not found")
+        else:
+            # We're deleting a nested note
+            # Navigate to the parent of the note to delete
+            for i in range(len(data.path) - 1):
+                level = data.path[i]
+                if level in current.children:
+                    current = current.children[level]
+                else:
+                    raise ValueError(f"Path '{level}' does not exist")
+            
+            # Now current is the parent of the note to delete
+            title_to_delete = data.path[-1]
+            if title_to_delete in current.children:
+                del current.children[title_to_delete]
+                return {"message": "Sticky note deleted successfully"}
+            else:
+                raise ValueError(f"Note '{title_to_delete}' not found")
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting sticky note: {str(e)}")
+
 @app.get("/api/sticky-tree")
 def get_sticky_tree():
     """
@@ -56,3 +182,4 @@ def get_sticky_tree():
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving sticky tree: {str(e)}")
+    

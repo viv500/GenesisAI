@@ -123,6 +123,15 @@ export function StickyNote({ note, onSelect, onEdit, onDelete, onOpen }: StickyN
     setEditContent(e.target.value)
   }
 
+  const handleContentKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsEditing(false)
+      setEditContent(note.content) // Reset to original content
+    } else if (e.key === 'Enter' && e.ctrlKey) {
+      handleSaveEditing()
+    }
+  }
+
   // Handle title editing
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditTitle(e.target.value)
@@ -131,6 +140,15 @@ export function StickyNote({ note, onSelect, onEdit, onDelete, onOpen }: StickyN
   const handleSaveTitle = () => {
     onEdit({ title: editTitle })
     setIsEditingTitle(false)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsEditingTitle(false)
+      setEditTitle(note.title) // Reset to original title
+    } else if (e.key === 'Enter') {
+      handleSaveTitle()
+    }
   }
 
   // Handle selection via checkbox
@@ -176,7 +194,7 @@ export function StickyNote({ note, onSelect, onEdit, onDelete, onOpen }: StickyN
               value={editTitle}
               onChange={handleTitleChange}
               onBlur={handleSaveTitle}
-              onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
+              onKeyDown={handleTitleKeyDown}
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />
@@ -218,7 +236,9 @@ export function StickyNote({ note, onSelect, onEdit, onDelete, onOpen }: StickyN
             className="w-full h-full min-h-[150px] bg-transparent resize-none focus:outline-none"
             value={editContent}
             onChange={handleContentChange}
+            onKeyDown={handleContentKeyDown}
             onClick={(e) => e.stopPropagation()}
+            autoFocus
           />
         ) : (
           <p className="text-sm whitespace-pre-wrap">{note.content}</p>

@@ -8,11 +8,7 @@ import { StickyNote } from "@/components/sticky-note"
 import { AIChat } from "@/components/ai-chat"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Timeline } from "@/components/timeline"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AddNoteDialog } from "@/components/add-note-dialog" // Import the dialog component
 import type { Note, BusinessSector, TimelineCheckpoint } from "@/lib/types"
 import { generateUniqueId } from "@/lib/utils"
 
@@ -30,6 +26,9 @@ export default function Dashboard() {
   
   // Track the highest z-index for notes
   const [highestZIndex, setHighestZIndex] = useState(1)
+  
+  // Add dialog state
+  const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false)
   
   const [canvasHierarchy, setCanvasHierarchy] = useState<Record<string, Record<string, Note[]>>>({
     "cp-1": {
@@ -157,12 +156,8 @@ export default function Dashboard() {
   })
 
   const [path, setPath] = useState<string[]>([]);
-  const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
-  const [newNoteTitle, setNewNoteTitle] = useState("");
-  const [newNoteContent, setNewNoteContent] = useState("");
-  const [newNoteSector, setNewNoteSector] = useState<BusinessSector>("inventory");
 
-  const getCurrentParentId = () => canvasStack.length > 0 ? canvasStack[canvasStack.length - 1] : "root";
+  const getCurrentParentId = () => path.length > 0 ? path[path.length - 1] : "root";
 
   const handleOpenNestedCanvas = (noteId: string, noteTitle: string) => {
     // Add to navigation path
@@ -189,12 +184,14 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddNote = () => {
+  // Modified to open the dialog instead of creating a note directly
+  const handleAddNoteClick = () => {
     setIsAddNoteDialogOpen(true);
   };
 
-  const handleAddNoteFromDialog = async () => {
-    const colors: Record<BusinessSector, string> = {
+  // New function to handle note creation from dialog
+  const handleAddNoteFromDialog = async (title: string, content: string, sector: BusinessSector) => {
+    const colors = {
       "inventory": "bg-yellow-200",
       "manufacturing": "bg-blue-200", 
       "product": "bg-green-200",
@@ -210,11 +207,11 @@ export default function Dashboard() {
 
     const newNote: Note = {
       id: generateUniqueId(),
-      title: newNoteTitle,
-      content: newNoteContent,
+      title: title,
+      content: content,
       position: { x: 200, y: 200 },
-      color: colors[newNoteSector],
-      sector: newNoteSector,
+      color: colors[sector],
+      sector: sector,
       selected: false,
       files: [],
       parentId: currentCanvasId === "root" ? null : currentCanvasId,
@@ -224,20 +221,25 @@ export default function Dashboard() {
     try {
       // Update backend - wrap in try/catch to handle potential API failures gracefully
       try {
+        console.log("Sending add request with path:", path);
+        
         const response = await fetch("http://localhost:8000/api/add-sticky", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             path: [...path],
             sticky: {
-              ...newNote,
-              description: newNoteContent // Add description field for backend compatibility
+              title: title,
+              description: content // Use description instead of content for backend
             }
           }),
         });
 
         if (!response.ok) {
-          console.warn("Backend API call failed, but continuing with frontend update");
+          const errorData = await response.json();
+          console.warn("Backend API call failed:", errorData);
+          toast.error(`Failed to add note: ${errorData.detail || 'Unknown error'}`);
+          // Continue with frontend update even if backend fails
         }
       } catch (apiError) {
         console.warn("Backend API call failed, but continuing with frontend update:", apiError);
@@ -258,80 +260,10 @@ export default function Dashboard() {
 
       setCanvasHierarchy(updatedHierarchy);
       setHighestZIndex(newZIndex);
+      toast.success(`A new note "${title}" has been added`);
+      
+      // Close the dialog
       setIsAddNoteDialogOpen(false);
-      setNewNoteTitle("");
-      setNewNoteContent("");
-      setNewNoteSector("inventory");
-      toast.success(`A new note "${newNoteTitle}" has been added`);
-
-    } catch (error) {
-      console.error("Failed to add note:", error);
-      toast.error("Failed to save note. Please try again.");
-    }
-  };
-
-  const handleQuickAddNote = async () => {
-    const sectors: BusinessSector[] = ["inventory", "manufacturing", "product", "human", "marketing", "financial"];
-    const colors = ["bg-yellow-200", "bg-blue-200", "bg-green-200", "bg-purple-200", "bg-red-200", "bg-indigo-200"];
-
-    const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
-    const sectorIndex = sectors.indexOf(randomSector);
-    const newZIndex = highestZIndex + 1;
-
-    // Get the current canvas ID consistently
-    const currentCanvasId = canvasStack[canvasStack.length - 1];
-
-    const newNote: Note = {
-      id: generateUniqueId(),
-      title: randomSector.charAt(0).toUpperCase() + randomSector.slice(1),
-      content: "Click to edit this note and add your business information.",
-      position: { x: 200, y: 200 },
-      color: colors[sectorIndex],
-      sector: randomSector,
-      selected: false,
-      files: [],
-      parentId: currentCanvasId === "root" ? null : currentCanvasId,
-      zIndex: newZIndex,
-    };
-
-    try {
-      // Update backend - wrap in try/catch to handle potential API failures gracefully
-      try {
-        const response = await fetch("http://localhost:8000/api/add-sticky", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            path: [...path],
-            sticky: {
-              ...newNote,
-              description: newNote.content // Add description field for backend compatibility
-            }
-          }),
-        });
-
-        if (!response.ok) {
-          console.warn("Backend API call failed, but continuing with frontend update");
-        }
-      } catch (apiError) {
-        console.warn("Backend API call failed, but continuing with frontend update:", apiError);
-        // Continue with frontend update even if backend fails
-      }
-
-      // Update frontend state
-      const updatedHierarchy = { ...canvasHierarchy };
-      
-      if (!updatedHierarchy[activeCheckpoint][currentCanvasId]) {
-        updatedHierarchy[activeCheckpoint][currentCanvasId] = [];
-      }
-
-      updatedHierarchy[activeCheckpoint][currentCanvasId] = [
-        ...updatedHierarchy[activeCheckpoint][currentCanvasId],
-        newNote,
-      ];
-
-      setCanvasHierarchy(updatedHierarchy);
-      setHighestZIndex(newZIndex);
-      toast.success(`A new ${newNote.title} note has been added`);
 
     } catch (error) {
       console.error("Failed to add note:", error);
@@ -341,8 +273,8 @@ export default function Dashboard() {
 
   // Get current notes based on active checkpoint and canvas
   const getCurrentNotes = (): Note[] => {
-    const currentCanvasId = canvasStack[canvasStack.length - 1];
-    return canvasHierarchy[activeCheckpoint]?.[currentCanvasId] || [];
+    const currentCanvasId = canvasStack[canvasStack.length - 1]
+    return canvasHierarchy[activeCheckpoint]?.[currentCanvasId] || []
   }
 
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
@@ -383,20 +315,76 @@ export default function Dashboard() {
     setCanvasHierarchy(updatedHierarchy)
   }
 
-  const handleNoteEdit = (id: string, updatedNote: Partial<Note>) => {
+  const handleNoteEdit = async (id: string, updatedNote: Partial<Note>) => {
     const currentCanvasId = canvasStack[canvasStack.length - 1]
 
+    // Find the current note to get its original data BEFORE updating the frontend state
+    const originalNote = canvasHierarchy[activeCheckpoint][currentCanvasId].find(note => note.id === id)
+    
+    if (!originalNote) {
+      console.error("Note not found for editing")
+      return
+    }
+    
+    // Store the original title for path construction
+    const originalTitle = originalNote.title
+
+    // Update the frontend state
     const updatedHierarchy = { ...canvasHierarchy }
     updatedHierarchy[activeCheckpoint][currentCanvasId] = updatedHierarchy[activeCheckpoint][currentCanvasId].map(
       (note) => (note.id === id ? { ...note, ...updatedNote } : note),
     )
 
     setCanvasHierarchy(updatedHierarchy)
+
+    // If title or content is being updated, call the backend API
+    if (updatedNote.title || updatedNote.content) {
+      try {
+        // Build the path to the note using the ORIGINAL title
+        const notePath = [...path, originalTitle]
+        
+        console.log("Sending edit request with path:", notePath)
+        console.log("New title:", updatedNote.title || originalTitle)
+        console.log("New content:", updatedNote.content || originalNote.content)
+
+        // Call the backend API
+        const response = await fetch("http://localhost:8000/api/edit-sticky", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: notePath,
+            title: updatedNote.title || originalTitle,
+            description: updatedNote.content || originalNote.content
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          console.warn("Backend API call for editing note failed:", errorData)
+          toast.error(`Failed to save changes: ${errorData.detail || 'Unknown error'}`)
+        }
+      } catch (error) {
+        console.error("Error updating note:", error)
+        toast.error("Failed to save changes to the server")
+      }
+    }
   }
 
-  const handleNoteDelete = (id: string) => {
+  const handleNoteDelete = async (id: string) => {
     const currentCanvasId = canvasStack[canvasStack.length - 1]
 
+    // Find the note before we delete it from the frontend
+    const noteToDelete = canvasHierarchy[activeCheckpoint][currentCanvasId].find(note => note.id === id)
+    
+    if (!noteToDelete) {
+      console.error("Note not found for deletion")
+      return
+    }
+    
+    // Get the note title for the path
+    const noteTitle = noteToDelete.title
+
+    // First update the frontend state
     const updatedHierarchy = { ...canvasHierarchy }
     updatedHierarchy[activeCheckpoint][currentCanvasId] = updatedHierarchy[activeCheckpoint][currentCanvasId].filter(
       (note) => note.id !== id,
@@ -409,7 +397,33 @@ export default function Dashboard() {
 
     setCanvasHierarchy(updatedHierarchy)
 
-    toast.success("The note has been removed from your canvas.")
+    // Call the backend API to delete the note
+    try {
+      // Build the path to the note using titles
+      const notePath = [...path, noteTitle]
+      
+      console.log("Sending delete request with path:", notePath)
+
+      // Call the backend API
+      const response = await fetch("http://localhost:8000/api/delete-sticky", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: notePath
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.warn("Backend API call for deleting note failed:", errorData)
+        toast.error(`Failed to delete note: ${errorData.detail || 'Unknown error'}`)
+      } else {
+        toast.success("The note has been removed from your canvas.")
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error)
+      toast.error("Failed to delete note from the server")
+    }
   }
 
   const handleOpenAIChat = () => {
@@ -467,7 +481,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-screen">
       <DashboardHeader
-        onAddNote={handleAddNote}
+        onAddNote={handleAddNoteClick} // Updated to open dialog
         onOpenAIChat={handleOpenAIChat}
         selectedCount={currentNotes.filter((note) => note.selected).length}
       />
@@ -519,74 +533,23 @@ export default function Dashboard() {
           />
         ))}
 
-        <div className="fixed bottom-6 right-6 flex flex-col gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-14 w-14 rounded-full shadow-lg"
-            onClick={handleAddNote}
-          >
-            <Plus className="h-6 w-6" />
-            <span className="sr-only">Add Note</span>
-          </Button>
-        </div>
-
-        <Dialog open={isAddNoteDialogOpen} onOpenChange={setIsAddNoteDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add New Note</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="title" className="text-right">
-                  Title
-                </Label>
-                <Input
-                  id="title"
-                  value={newNoteTitle}
-                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="content" className="text-right">
-                  Content
-                </Label>
-                <Textarea
-                  id="content"
-                  value={newNoteContent}
-                  onChange={(e) => setNewNoteContent(e.target.value)}
-                  className="col-span-3"
-                  rows={4}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="sector" className="text-right">
-                  Sector
-                </Label>
-                <Select value={newNoteSector} onValueChange={(value) => setNewNoteSector(value as BusinessSector)}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a sector" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inventory">Inventory</SelectItem>
-                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="product">Product</SelectItem>
-                    <SelectItem value="human">Human</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="financial">Financial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleAddNoteFromDialog}>
-                Add Note
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          onClick={handleAddNoteClick} // Updated to open dialog
+        >
+          <Plus className="h-6 w-6" />
+          <span className="sr-only">Add Note</span>
+        </Button>
       </div>
+
+      {/* Add Note Dialog */}
+      <AddNoteDialog
+        isOpen={isAddNoteDialogOpen}
+        onClose={() => setIsAddNoteDialogOpen(false)}
+        onAddNote={handleAddNoteFromDialog}
+      />
 
       {isAIChatOpen && (
         <AIChat
