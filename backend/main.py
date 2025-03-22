@@ -226,17 +226,6 @@ def process_speech_to_text(data: SpeechToTextRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing speech-to-text: {str(e)}")
 
-
-class BusinessInfo(BaseModel):
-    businessInfo: str
-
-@app.post("/api/analyze-business")
-async def analyze_business(data: BusinessInfo):
-    try:
-        return {"message": f"{data.businessInfo.upper()} hair balls"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/api/updateCanvas")
 async def update_canvas(data: CanvasHierarchyModel):
     try:
