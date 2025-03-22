@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 from models import StickyNote, StickyNoteTree
 from datetime import datetime
+import time
 
 # Create an instance of the FastAPI class
 app = FastAPI()
@@ -29,6 +30,11 @@ class EditStickyNoteRequest(BaseModel):
 
 class DeleteStickyNoteRequest(BaseModel):
     path: List[str]
+
+class SpeechToTextRequest(BaseModel):
+    text: str
+class CanvasHierarchyModel(BaseModel):
+    canvasHierarchy: Dict[str, Dict[str, List[Any]]]
 
 # Define a root endpoint
 @app.get("/")
@@ -183,3 +189,116 @@ def get_sticky_tree():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving sticky tree: {str(e)}")
     
+@app.post("/api/speech-to-text")
+def process_speech_to_text(data: SpeechToTextRequest):
+    """
+    Process speech-to-text data and return analysis.
+    This is a dummy endpoint that simulates processing time and returns mock data.
+    """
+    try:
+        # Print the received data for debugging
+        print(f"Speech-to-text request received: {data.text}")
+        
+        # Simulate processing time
+        time.sleep(1)
+        
+        # Mock analysis results
+        word_count = len(data.text.split())
+        
+        return {
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+            "data": {
+                "receivedText": data.text,
+                "wordCount": word_count,
+                "analysis": {
+                    "sentiment": "positive",
+                    "keyTopics": ["productivity", "organization", "planning"],
+                    "suggestedActions": [
+                        "Create a sticky note for each key topic",
+                        "Organize topics into a hierarchy",
+                        "Set deadlines for action items"
+                    ]
+                }
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing speech-to-text: {str(e)}")
+
+
+class BusinessInfo(BaseModel):
+    businessInfo: str
+
+@app.post("/api/analyze-business")
+async def analyze_business(data: BusinessInfo):
+    try:
+        return {"message": f"{data.businessInfo.upper()} hair balls"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/updateCanvas")
+async def update_canvas(data: CanvasHierarchyModel):
+    try:
+        # Define the new hierarchy structure
+        new_canvas_hierarchy = {
+            "cp-new": {
+                "root": [
+                    {
+                        "id": "task-1",
+                        "title": "Project Planning",
+                        "content": "Outline key project milestones and deliverables.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-red-200",
+                        "sector": "planning",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "task-2",
+                        "title": "Budgeting",
+                        "content": "Allocate resources and track expenses for the project.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-blue-200",
+                        "sector": "finance",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                ],
+                "task-1": [
+                    {
+                        "id": "task-1-1",
+                        "title": "Milestone 1",
+                        "content": "Define the first major milestone.",
+                        "position": {"x": 100, "y": 250},
+                        "color": "bg-red-100",
+                        "sector": "planning",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "task-1",
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "task-1-2",
+                        "title": "Risk Assessment",
+                        "content": "Identify and mitigate project risks.",
+                        "position": {"x": 400, "y": 250},
+                        "color": "bg-orange-100",
+                        "sector": "planning",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "task-1",
+                        "zIndex": 1,
+                    },
+                ],
+            }
+        }
+
+        # Return the new structure instead of modifying the incoming one
+        return new_canvas_hierarchy
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
