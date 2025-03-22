@@ -8,7 +8,6 @@ interface DashboardHeaderProps {
   onOpenAIChat: () => void
   selectedCount: number
 }
-
 export function DashboardHeader({ onAddNote, onOpenAIChat, selectedCount }: DashboardHeaderProps) {
   return (
     <header className="border-b bg-background p-4">
@@ -33,4 +32,3 @@ export function DashboardHeader({ onAddNote, onOpenAIChat, selectedCount }: Dash
     </header>
   )
 }
-

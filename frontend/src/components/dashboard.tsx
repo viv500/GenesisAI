@@ -8,6 +8,11 @@ import { StickyNote } from "@/components/sticky-note"
 import { AIChat } from "@/components/ai-chat"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Timeline } from "@/components/timeline"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Note, BusinessSector, TimelineCheckpoint } from "@/lib/types"
 import { generateUniqueId } from "@/lib/utils"
 
@@ -152,12 +157,19 @@ export default function Dashboard() {
   })
 
   const [path, setPath] = useState<string[]>([]);
+  const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [newNoteContent, setNewNoteContent] = useState("");
+  const [newNoteSector, setNewNoteSector] = useState<BusinessSector>("inventory");
 
-  const getCurrentParentId = () => path.length > 0 ? path[path.length - 1] : "root";
+  const getCurrentParentId = () => canvasStack.length > 0 ? canvasStack[canvasStack.length - 1] : "root";
 
   const handleOpenNestedCanvas = (noteId: string, noteTitle: string) => {
     // Add to navigation path
     setPath([...path, noteTitle]);
+    
+    // Add to canvas stack
+    setCanvasStack([...canvasStack, noteId]);
     
     // Initialize empty canvas for the note if it doesn't exist
     const updatedHierarchy = { ...canvasHierarchy };
@@ -171,15 +183,103 @@ export default function Dashboard() {
     if (path.length > 0) {
       setPath(path.slice(0, -1));
     }
+    
+    if (canvasStack.length > 1) {
+      setCanvasStack(canvasStack.slice(0, -1));
+    }
   };
 
-  const handleAddNote = async () => {
+  const handleAddNote = () => {
+    setIsAddNoteDialogOpen(true);
+  };
+
+  const handleAddNoteFromDialog = async () => {
+    const colors: Record<BusinessSector, string> = {
+      "inventory": "bg-yellow-200",
+      "manufacturing": "bg-blue-200", 
+      "product": "bg-green-200",
+      "human": "bg-purple-200",
+      "marketing": "bg-red-200",
+      "financial": "bg-indigo-200"
+    };
+    
+    const newZIndex = highestZIndex + 1;
+    
+    // Get the current canvas ID consistently
+    const currentCanvasId = canvasStack[canvasStack.length - 1];
+
+    const newNote: Note = {
+      id: generateUniqueId(),
+      title: newNoteTitle,
+      content: newNoteContent,
+      position: { x: 200, y: 200 },
+      color: colors[newNoteSector],
+      sector: newNoteSector,
+      selected: false,
+      files: [],
+      parentId: currentCanvasId === "root" ? null : currentCanvasId,
+      zIndex: newZIndex,
+    };
+
+    try {
+      // Update backend - wrap in try/catch to handle potential API failures gracefully
+      try {
+        const response = await fetch("http://localhost:8000/api/add-sticky", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: [...path],
+            sticky: {
+              ...newNote,
+              description: newNoteContent // Add description field for backend compatibility
+            }
+          }),
+        });
+
+        if (!response.ok) {
+          console.warn("Backend API call failed, but continuing with frontend update");
+        }
+      } catch (apiError) {
+        console.warn("Backend API call failed, but continuing with frontend update:", apiError);
+        // Continue with frontend update even if backend fails
+      }
+
+      // Update frontend state
+      const updatedHierarchy = { ...canvasHierarchy };
+      
+      if (!updatedHierarchy[activeCheckpoint][currentCanvasId]) {
+        updatedHierarchy[activeCheckpoint][currentCanvasId] = [];
+      }
+
+      updatedHierarchy[activeCheckpoint][currentCanvasId] = [
+        ...updatedHierarchy[activeCheckpoint][currentCanvasId],
+        newNote,
+      ];
+
+      setCanvasHierarchy(updatedHierarchy);
+      setHighestZIndex(newZIndex);
+      setIsAddNoteDialogOpen(false);
+      setNewNoteTitle("");
+      setNewNoteContent("");
+      setNewNoteSector("inventory");
+      toast.success(`A new note "${newNoteTitle}" has been added`);
+
+    } catch (error) {
+      console.error("Failed to add note:", error);
+      toast.error("Failed to save note. Please try again.");
+    }
+  };
+
+  const handleQuickAddNote = async () => {
     const sectors: BusinessSector[] = ["inventory", "manufacturing", "product", "human", "marketing", "financial"];
     const colors = ["bg-yellow-200", "bg-blue-200", "bg-green-200", "bg-purple-200", "bg-red-200", "bg-indigo-200"];
 
     const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
     const sectorIndex = sectors.indexOf(randomSector);
     const newZIndex = highestZIndex + 1;
+
+    // Get the current canvas ID consistently
+    const currentCanvasId = canvasStack[canvasStack.length - 1];
 
     const newNote: Note = {
       id: generateUniqueId(),
@@ -190,25 +290,34 @@ export default function Dashboard() {
       sector: randomSector,
       selected: false,
       files: [],
-      parentId: getCurrentParentId(),
+      parentId: currentCanvasId === "root" ? null : currentCanvasId,
       zIndex: newZIndex,
     };
 
     try {
-      // Update backend
-      const response = await fetch("/api/add-sticky", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          path: [...path],
-          sticky: newNote
-        }),
-      });
+      // Update backend - wrap in try/catch to handle potential API failures gracefully
+      try {
+        const response = await fetch("http://localhost:8000/api/add-sticky", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: [...path],
+            sticky: {
+              ...newNote,
+              description: newNote.content // Add description field for backend compatibility
+            }
+          }),
+        });
 
-      if (!response.ok) throw new Error("Failed to save to backend");
+        if (!response.ok) {
+          console.warn("Backend API call failed, but continuing with frontend update");
+        }
+      } catch (apiError) {
+        console.warn("Backend API call failed, but continuing with frontend update:", apiError);
+        // Continue with frontend update even if backend fails
+      }
 
       // Update frontend state
-      const currentCanvasId = getCurrentParentId();
       const updatedHierarchy = { ...canvasHierarchy };
       
       if (!updatedHierarchy[activeCheckpoint][currentCanvasId]) {
@@ -232,8 +341,8 @@ export default function Dashboard() {
 
   // Get current notes based on active checkpoint and canvas
   const getCurrentNotes = (): Note[] => {
-    const currentCanvasId = canvasStack[canvasStack.length - 1]
-    return canvasHierarchy[activeCheckpoint]?.[currentCanvasId] || []
+    const currentCanvasId = canvasStack[canvasStack.length - 1];
+    return canvasHierarchy[activeCheckpoint]?.[currentCanvasId] || [];
   }
 
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
@@ -410,15 +519,73 @@ export default function Dashboard() {
           />
         ))}
 
-        <Button
-          variant="outline"
-          size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
-          onClick={handleAddNote}
-        >
-          <Plus className="h-6 w-6" />
-          <span className="sr-only">Add Note</span>
-        </Button>
+        <div className="fixed bottom-6 right-6 flex flex-col gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg"
+            onClick={handleAddNote}
+          >
+            <Plus className="h-6 w-6" />
+            <span className="sr-only">Add Note</span>
+          </Button>
+        </div>
+
+        <Dialog open={isAddNoteDialogOpen} onOpenChange={setIsAddNoteDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Note</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="title" className="text-right">
+                  Title
+                </Label>
+                <Input
+                  id="title"
+                  value={newNoteTitle}
+                  onChange={(e) => setNewNoteTitle(e.target.value)}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="content" className="text-right">
+                  Content
+                </Label>
+                <Textarea
+                  id="content"
+                  value={newNoteContent}
+                  onChange={(e) => setNewNoteContent(e.target.value)}
+                  className="col-span-3"
+                  rows={4}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="sector" className="text-right">
+                  Sector
+                </Label>
+                <Select value={newNoteSector} onValueChange={(value) => setNewNoteSector(value as BusinessSector)}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a sector" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inventory">Inventory</SelectItem>
+                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                    <SelectItem value="product">Product</SelectItem>
+                    <SelectItem value="human">Human</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                    <SelectItem value="financial">Financial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" onClick={handleAddNoteFromDialog}>
+                Add Note
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {isAIChatOpen && (

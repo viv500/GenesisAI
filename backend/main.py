@@ -1,10 +1,21 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any
 from models import StickyNote, StickyNoteTree
+from datetime import datetime
 
 # Create an instance of the FastAPI class
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Your React app's origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 tree = StickyNoteTree()
 
 class StickyNoteRequest(BaseModel):
@@ -27,3 +38,21 @@ def add_sticky(data: StickyNoteRequest):
         return {"message": "Sticky note added successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/sticky-tree")
+def get_sticky_tree():
+    """
+    Returns all sticky notes in a tree format.
+    """
+    try:
+        # Convert the tree to a dictionary format for JSON response
+        tree_data = tree.to_dict()
+        
+        return {
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+            "data": tree_data
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving sticky tree: {str(e)}")
