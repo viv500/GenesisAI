@@ -13,6 +13,20 @@ class StickyNote:
     
     def get_child(self, title: str) -> Optional["StickyNote"]:
         return self.children.get(title)
+        
+    def to_dict(self):
+        """Convert the sticky note to a dictionary format for JSON serialization"""
+        children_list = []
+        for title, child in self.children.items():
+            child_dict = child.to_dict()
+            child_dict["id"] = title  # Use the title as the ID for simplicity
+            children_list.append(child_dict)
+            
+        return {
+            "title": self.title,
+            "description": self.description,
+            "children": children_list
+        }
 
     def __repr__(self):
         return f"StickyNote(title={self.title}, children={list(self.children.keys())})"
@@ -31,5 +45,11 @@ class StickyNoteTree:
 
         current.add_child(title, description)
 
+    def to_dict(self):
+        """Convert the entire tree to a dictionary format for JSON serialization"""
+        return {
+            "root": self.root.to_dict()
+        }
+        
     def __repr__(self):
         return f"StickyNoteTree(root={self.root})"
