@@ -231,61 +231,169 @@ async def update_canvas(data: CanvasHierarchyModel):
     try:
         # Define the new hierarchy structure
         new_canvas_hierarchy = {
-            "cp-new": {
-                "root": [
-                    {
-                        "id": "task-1",
-                        "title": "Project Planning",
-                        "content": "Outline key project milestones and deliverables.",
-                        "position": {"x": 100, "y": 100},
-                        "color": "bg-red-200",
-                        "sector": "planning",
-                        "selected": False,
-                        "files": [],
-                        "parentId": None,
-                        "zIndex": 1,
-                    },
-                    {
-                        "id": "task-2",
-                        "title": "Budgeting",
-                        "content": "Allocate resources and track expenses for the project.",
-                        "position": {"x": 400, "y": 100},
-                        "color": "bg-blue-200",
-                        "sector": "finance",
-                        "selected": False,
-                        "files": [],
-                        "parentId": None,
-                        "zIndex": 1,
-                    },
-                ],
-                "task-1": [
-                    {
-                        "id": "task-1-1",
-                        "title": "Milestone 1",
-                        "content": "Define the first major milestone.",
-                        "position": {"x": 100, "y": 250},
-                        "color": "bg-red-100",
-                        "sector": "planning",
-                        "selected": False,
-                        "files": [],
-                        "parentId": "task-1",
-                        "zIndex": 1,
-                    },
-                    {
-                        "id": "task-1-2",
-                        "title": "Risk Assessment",
-                        "content": "Identify and mitigate project risks.",
-                        "position": {"x": 400, "y": 250},
-                        "color": "bg-orange-100",
-                        "sector": "planning",
-                        "selected": False,
-                        "files": [],
-                        "parentId": "task-1",
-                        "zIndex": 1,
-                    },
-                ],
-            }
-        }
+  "cp-1": {
+    "root": [
+      {
+        "id": "note-1",
+        "title": "Inventory",
+        "content": "Track and manage your inventory levels, suppliers, and procurement processes.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-yellow-200",
+        "sector": "inventory",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      },
+      {
+        "id": "note-2",
+        "title": "Manufacturing",
+        "content": "Monitor production processes, quality control, and operational efficiency.",
+        "position": { "x": 400, "y": 100 },
+        "color": "bg-blue-200",
+        "sector": "manufacturing",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      },
+      {
+        "id": "note-3",
+        "title": "Product Strategy",
+        "content": "Plan product roadmaps, feature development, and market positioning.",
+        "position": { "x": 100, "y": 350 },
+        "color": "bg-green-200",
+        "sector": "product",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      },
+      {
+        "id": "note-4",
+        "title": "Human Operations",
+        "content": "Manage recruitment, training, performance, and employee engagement.",
+        "position": { "x": 400, "y": 350 },
+        "color": "bg-purple-200",
+        "sector": "human",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      },
+      {
+        "id": "note-5",
+        "title": "please please please",
+        "content": "sabrina carpenter",
+        "position": { "x": 800, "y": 350 },
+        "color": "bg-purple-200",
+        "sector": "music",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      }
+    ],
+    "note-1": [
+      {
+        "id": "note-1-1",
+        "title": "Suppliers",
+        "content": "List of key suppliers and contact information.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-yellow-100",
+        "sector": "inventory",
+        "selected": False,
+        "files": [],
+        "parentId": "note-1",
+        "zIndex": 1
+      },
+      {
+        "id": "note-1-2",
+        "title": "Stock Levels",
+        "content": "Current inventory levels and reorder points.",
+        "position": { "x": 400, "y": 100 },
+        "color": "bg-yellow-100",
+        "sector": "inventory",
+        "selected": False,
+        "files": [],
+        "parentId": "note-1",
+        "zIndex": 1
+      }
+    ],
+    "note-5": [
+      {
+        "id": "note-1-1",
+        "title": "Suppliers",
+        "content": "List of key suppliers and contact information.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-yellow-100",
+        "sector": "inventory",
+        "selected": False,
+        "files": [],
+        "parentId": "note-1",
+        "zIndex": 1
+      },
+      {
+        "id": "note-1-2",
+        "title": "Stock Levels",
+        "content": "Current inventory levels and reorder points.",
+        "position": { "x": 400, "y": 100 },
+        "color": "bg-yellow-100",
+        "sector": "inventory",
+        "selected": False,
+        "files": [],
+        "parentId": "note-1",
+        "zIndex": 1
+      }
+    ]
+  },
+  "cp-2": {
+    "root": [
+      {
+        "id": "note-5",
+        "title": "Inventory",
+        "content": "Updated inventory management system implemented.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-yellow-200",
+        "sector": "inventory",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      },
+      {
+        "id": "note-6",
+        "title": "Manufacturing",
+        "content": "New production line added, increasing capacity by 30%.",
+        "position": { "x": 400, "y": 100 },
+        "color": "bg-blue-200",
+        "sector": "manufacturing",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      }
+    ]
+  },
+  "cp-3": {
+    "root": [
+      {
+        "id": "note-7",
+        "title": "Product Strategy",
+        "content": "New product line launched, targeting enterprise customers.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-green-200",
+        "sector": "product",
+        "selected": False,
+        "files": [],
+        "parentId": None,
+        "zIndex": 1
+      }
+    ]
+  }
+}
+
+
 
         # Return the new structure instead of modifying the incoming one
         return new_canvas_hierarchy
