@@ -82,7 +82,7 @@ export default function Landing() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black p-4">
       <h1 className="text-4xl font-bold text-white mb-8">
-        Welcome to Stella AI
+        Welcome to Sofia AI
       </h1>
       
       {!showForm ? (
@@ -107,7 +107,7 @@ export default function Landing() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label className="block text-white text-lg">
-                    Tell Stella what you currently know about your business
+                    Tell Sofia what you currently know about your business
                   </label>
                   <p className="text-gray-400 text-sm">
                     This could include Industry, Products/Services, Revenue Model, Business Goals etc.
