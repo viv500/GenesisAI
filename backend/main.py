@@ -494,6 +494,61 @@ class HierarchicalDataManager:
             "updates": updates_made
         }
     
+    def generate_feedback(self): 
+        """
+        Generate thought-provoking feedback about the current business plan using Gemini AI.
+        
+        Returns:
+            Dict[str, Any]: A dictionary containing the feedback message or error details
+        """
+        if not self.model:
+            return {"message": "Error occurred", "error": "Gemini model not initialized"}
+            
+        prompt = f"""
+            You are a seasoned business strategist AI analyzing our venture's foundational elements. 
+            Carefully examine the core components from our planning notes below:
+
+            {self.knowledge_base}
+
+            Identify the most significant opportunity to create connective tissue between these operational areas: 
+            - Inventory/Supply Chain (including suppliers and stock levels)
+            - Manufacturing/Production Capacity
+            - Product Development Roadmap
+            - Human Operations/Talent Strategy
+            - Sustainability Integration (from later checkpoints)
+
+            Generate one piercing question that exposes either:
+            1) A critical gap in cross-departmental synergy, or 
+            2) An untapped leverage point between operational units, or
+            3) A sustainability optimization not fully capitalized
+
+            Focus specifically on how improvements in one area could amplify results in others. Phrase your question to provoke strategic reevaluation rather than incremental tweaks. 
+            Output only the question itself, without any formatting or commentary.
+        """
+        
+        try: 
+            # Set safety settings if needed
+            # safety_settings = [
+            #    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+            # ]
+            
+            # Make the API call to Gemini
+            response = self.model.generate_content(prompt)
+            
+            # Check if response has text attribute
+            if hasattr(response, 'text'):
+                feedback = response.text
+                print(f"Successfully generated feedback: {feedback[:100]}...")
+                return {"message": feedback, "status": "success"}
+            else:
+                print(f"Unexpected response format: {response}")
+                return {"message": "Error occurred", "error": "Unexpected response format"}
+                
+        except Exception as e: 
+            print(f"Error generating feedback: {str(e)}")
+            return {"message": "Error occurred", "error": str(e)}
+
+
     def simple_information_processing(self, parent_note: Dict[str, Any], information: str) -> Dict[str, Any]:
         """
         Simple fallback method for processing information.
@@ -771,6 +826,9 @@ class HierarchicalDataManager:
                     # Convert parentId None string to actual None
                     if isinstance(note.get("parentId"), str) and note["parentId"].lower() == "none":
                         note["parentId"] = None
+
+    
+
 
 
 
@@ -1214,11 +1272,18 @@ async def update_hierarchy(data: UpdateHierarchyRequest):
 
 @app.post("/api/feedback")
 async def receive_feedback(canvas_data: CanvasHierarchyModel):
-# async def receive_feedback(): 
     try:
         # Process the canvas hierarchy data
-        # This is where you would add your logic to handle the feedback
+        manager = HierarchicalDataManager("AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU", canvas_data.canvasHierarchy)
+        response = manager.generate_feedback()
         
-        return {"status": "success", "message": "Feedback received successfully"}
+        if response["message"] == "Error occurred":
+            raise Exception("Failed to generate feedback")
+            
+        return {
+            "status": "success", 
+            "message": response["message"],
+            "feedback": response["message"]  # Including the feedback in the response
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing feedback: {str(e)}")
