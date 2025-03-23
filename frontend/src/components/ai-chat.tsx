@@ -75,7 +75,7 @@ export function AIChat({ selectedNotes, onClose, onApplyChanges, currentHierarch
       }
 
       const updatedHierarchy = await response.json();
-      
+
       // Update hierarchy after AI response
       onApplyChanges(updatedHierarchy);
     } catch (error) {

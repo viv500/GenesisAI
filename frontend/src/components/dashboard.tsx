@@ -40,7 +40,7 @@ export default function Dashboard() {
           position: { x: 100, y: 100 },
           color: "bg-yellow-200",
           sector: "inventory",
-          selected: false,
+          selected: true,
           files: [],
           parentId: null,
           zIndex: 1,
@@ -52,7 +52,7 @@ export default function Dashboard() {
           position: { x: 400, y: 100 },
           color: "bg-blue-200",
           sector: "manufacturing",
-          selected: false,
+          selected: true,
           files: [],
           parentId: null,
           zIndex: 1,
@@ -64,7 +64,7 @@ export default function Dashboard() {
           position: { x: 100, y: 350 },
           color: "bg-green-200",
           sector: "product",
-          selected: false,
+          selected: true,
           files: [],
           parentId: null,
           zIndex: 1,
@@ -76,7 +76,7 @@ export default function Dashboard() {
           position: { x: 400, y: 350 },
           color: "bg-purple-200",
           sector: "human",
-          selected: false,
+          selected: true,
           files: [],
           parentId: null,
           zIndex: 1,
@@ -90,7 +90,7 @@ export default function Dashboard() {
           position: { x: 100, y: 100 },
           color: "bg-yellow-100",
           sector: "inventory",
-          selected: false,
+          selected: true,
           files: [],
           parentId: "note-1",
           zIndex: 1,
@@ -102,7 +102,7 @@ export default function Dashboard() {
           position: { x: 400, y: 100 },
           color: "bg-yellow-100",
           sector: "inventory",
-          selected: false,
+          selected: true,
           files: [],
           parentId: "note-1",
           zIndex: 1,
@@ -118,7 +118,7 @@ export default function Dashboard() {
           position: { x: 100, y: 100 },
           color: "bg-yellow-200",
           sector: "inventory",
-          selected: false,
+          selected: true,
           files: [],
           parentId: null,
           zIndex: 1,
@@ -130,7 +130,7 @@ export default function Dashboard() {
           position: { x: 400, y: 100 },
           color: "bg-blue-200",
           sector: "manufacturing",
-          selected: false,
+          selected: true,
           files: [],
           parentId: null,
           zIndex: 1,
@@ -146,7 +146,7 @@ export default function Dashboard() {
           position: { x: 100, y: 100 },
           color: "bg-green-200",
           sector: "product",
-          selected: false,
+          selected: true,
           files: [],
           parentId: null,
           zIndex: 1,
@@ -456,16 +456,6 @@ export default function Dashboard() {
         >
           <Plus className="h-6 w-6" />
           <span className="sr-only">Add Note</span>
-        </Button>
-
-        {/* NEW: Button to trigger canvas hierarchy change */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg bg-blue-100"
-          onClick={handleChangeDetails}
-        >
-          <span>Change Details</span>
         </Button>
       </div>
 
