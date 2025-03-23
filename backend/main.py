@@ -4,10 +4,13 @@ import os
 import re
 import uuid
 from typing import Dict, List, Any, Tuple, Union
+from dotenv import load_dotenv
 
 # Add this to the imports section at the top of the file
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Optional, Union, Set
+
+load_dotenv()
 
 class HierarchicalDataManager:
     def __init__(self, gemini_api_key: str, initial_knowledge_base: Dict[str, Any] = None):
@@ -18,7 +21,7 @@ class HierarchicalDataManager:
             gemini_api_key: Your Google Gemini API key
             initial_knowledge_base: Optional custom knowledge base to start with
         """
-        genai.configure(api_key=gemini_api_key)
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         
         # Updated model selection logic - trying newer models first
         try:
@@ -1255,7 +1258,6 @@ class UpdateHierarchyRequest(BaseModel):
     canvasHierarchy: Dict[str, Dict[str, List[Dict]]]  # More specific typing
 
 # Configure Gemini
-#genai.configure(api_key="AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU")
 #model = genai.GenerativeModel('gemini-1.5-pro')
 
 
@@ -1263,7 +1265,7 @@ class UpdateHierarchyRequest(BaseModel):
 @app.post("/api/update-hierarchy")
 async def update_hierarchy(data: UpdateHierarchyRequest):
     #OPEN JASON FILE HERE
-    manager = HierarchicalDataManager("AIzaSyC49mSrXNKfVBNILEBnWE5W8b7QsCRhGRg", data.canvasHierarchy)
+    manager = HierarchicalDataManager(os.getenv("GEMINI_API_KEY"), data.canvasHierarchy)
 
     #ENTER PROMPT HERE
     result = manager.process_information(data.question)
@@ -1286,85 +1288,17 @@ class UpdatedNoteModel(BaseModel):
 async def receive_feedback(data: UpdatedNoteModel):
     try:
         # Process the canvas hierarchy data
-        manager = HierarchicalDataManager("AIzaSyC49mSrXNKfVBNILEBnWE5W8b7QsCRhGRg", data.canvasHierarchy)
+        manager = HierarchicalDataManager(os.getenv("GEMINI_API_KEY"), data.canvasHierarchy)
+        response = manager.generate_feedback()
         
-        # Create a more targeted prompt based on the updated note
-        if data.updatedNote:
-            # Extract information about the updated note
-            note_title = data.updatedNote.get("title", "")
-            note_content = data.updatedNote.get("content", "")
-            note_sector = data.updatedNote.get("sector", "")
+        if response["message"] == "Error occurred":
+            raise Exception("Failed to generate feedback")
             
-            # Get information about what changed
-            changes = data.changes or {}
-            changed_title = changes.get("title", False)
-            changed_content = changes.get("content", False)
-            
-            # Get original note information if available
-            original_title = data.originalNote.get("title", "") if data.originalNote else ""
-            original_content = data.originalNote.get("content", "") if data.originalNote else ""
-            
-            # Create a custom prompt that includes the specific note context
-            custom_prompt = f"""
-    You are a seasoned business strategist AI analyzing our venture's foundational elements.
-    
-    A business note has just been updated with the following changes:
-    
-    {f"Title changed from '{original_title}' to '{note_title}'" if changed_title else f"Title: {note_title}"}
-    {f"Content changed from '{original_content}' to '{note_content}'" if changed_content else f"Content: {note_content}"}
-    Sector: {note_sector}
-    
-    Based on this specific update and considering the broader business context:
-    {manager.knowledge_base}
-    
-    Generate one piercing question that:
-    1) Connects this specific update to other operational areas
-    2) Identifies potential strategic implications of this change
-    3) Challenges assumptions or reveals hidden opportunities
-    
-    Focus on how this specific change might create ripple effects across the business.
-    
-    Format your response EXACTLY as follows:
-    Change in business plans: [summarize the change in the business plan VERY BRIEFLY, 1-2 sentences max]
-    --------------------------------------
-    💡 - Question/Insight: [...insert your business insight here as a thought-provoking question.]
-    
-    Do not include any additional text, commentary, or formatting.
-"""
-            
-            # Generate feedback using the custom prompt
-            response = manager.model.generate_content(custom_prompt)
-            
-            # Check if response has text attribute
-            if hasattr(response, 'text'):
-                feedback = response.text
-                print(f"Successfully generated feedback: {feedback[:100]}...")
-                return {
-                    "status": "success", 
-                    "message": feedback,
-                    "feedback": feedback
-                }
-            else:
-                print(f"Unexpected response format: {response}")
-                # Fall back to the general feedback method
-                response = manager.generate_feedback()
-                return {
-                    "status": "success", 
-                    "message": response["message"],
-                    "feedback": response["message"]
-                }
-        else:
-            # If no specific note was updated, use the general feedback method
-            response = manager.generate_feedback()
-            
-            if response["message"] == "Error occurred":
-                raise Exception("Failed to generate feedback")
-                
-            return {
-                "status": "success", 
-                "message": response["message"],
-                "feedback": response["message"]
-            }
+        return {
+            "status": "success", 
+            "message": response["message"],
+            "feedback": response["message"]  # Including the feedback in the response
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing feedback: {str(e)}")
 
