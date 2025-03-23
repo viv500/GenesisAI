@@ -226,6 +226,10 @@ export default function Dashboard() {
   const handleNoteEdit = async (id: string, updatedNote: Partial<Note>) => {
     const currentCanvasId = canvasStack[canvasStack.length - 1]
 
+    // Find the original note before updating
+    const originalNote = canvasHierarchy[activeCheckpoint][currentCanvasId].find((note) => note.id === id)
+
+    // Update the hierarchy with the edited note
     const updatedHierarchy = { ...canvasHierarchy }
     updatedHierarchy[activeCheckpoint][currentCanvasId] = updatedHierarchy[activeCheckpoint][currentCanvasId].map(
       (note) => (note.id === id ? { ...note, ...updatedNote } : note),
@@ -233,37 +237,68 @@ export default function Dashboard() {
 
     setCanvasHierarchy(updatedHierarchy)
 
+    // Get the updated note after changes
+    const updatedNoteComplete = updatedHierarchy[activeCheckpoint][currentCanvasId].find((note) => note.id === id)
+
     // Only generate feedback if content was edited (not just position)
     if (updatedNote.content || updatedNote.title) {
       try {
-        // In a real implementation, this would be an API call to the backend
-        // For now, we'll simulate a response with a timeout
-        setTimeout(() => {
-          // Generate a feedback question based on the note content
-          const feedbackQuestion = generateFeedbackQuestion(
-            updatedHierarchy[activeCheckpoint][currentCanvasId].find((note) => note.id === id),
-          )
+        // Call the backend API to generate feedback based on the updated note
+        const response = await fetch("http://localhost:8000/api/feedback", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            canvasHierarchy: updatedHierarchy,
+            updatedNote: updatedNoteComplete, // Include the complete updated note
+            originalNote: originalNote, // Include the original note for context
+            changes: {
+              title: updatedNote.title !== undefined,
+              content: updatedNote.content !== undefined,
+              position: updatedNote.position !== undefined,
+            },
+          }),
+        })
 
-          // Add the feedback to our list
-          const newFeedback: FeedbackItem = {
-            id: generateUniqueId(),
-            message: feedbackQuestion,
-            timestamp: new Date(),
-          }
+        if (!response.ok) {
+          throw new Error("Failed to generate feedback")
+        }
 
-          setFeedbackItems((prev) => [newFeedback, ...prev])
+        const data = await response.json()
 
-          // Make sure the feedback panel is open
-          setIsFeedbackPanelOpen(true)
-        }, 1000)
+        // Add the feedback to our list
+        const newFeedback: FeedbackItem = {
+          id: generateUniqueId(),
+          message: data.feedback,
+          timestamp: new Date(),
+        }
+
+        setFeedbackItems((prev) => [newFeedback, ...prev])
+
+        // Make sure the feedback panel is open
+        setIsFeedbackPanelOpen(true)
       } catch (error) {
         console.error("Failed to generate feedback:", error)
+
+        // Fallback to local feedback generation if API call fails
+        const feedbackQuestion = generateFeedbackQuestion(
+          updatedHierarchy[activeCheckpoint][currentCanvasId].find((note) => note.id === id),
+        )
+
+        const newFeedback: FeedbackItem = {
+          id: generateUniqueId(),
+          message: feedbackQuestion,
+          timestamp: new Date(),
+        }
+
+        setFeedbackItems((prev) => [newFeedback, ...prev])
+        setIsFeedbackPanelOpen(true)
       }
     }
   }
 
-  // Helper function to generate feedback questions
-  // In a real implementation, this would be handled by the backend AI
+  // Helper function for local feedback generation (fallback)
   const generateFeedbackQuestion = (note?: Note): string => {
     if (!note) return "How does this change impact your overall business strategy?"
 
