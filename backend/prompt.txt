@@ -1,0 +1,26 @@
+**JSON Structure Modification Request**
+Current Hierarchy (DO NOT MODIFY UNLESS INSTRUCTED):
+{json.dumps(data.canvasHierarchy, indent=2)}
+
+User Instruction: {data.question}
+
+**Strict Requirements**
+1. Maintain ALL existing notes and structure
+2. Only make EXPLICITLY requested changes
+3. Output MUST be FULL hierarchy in EXACT format:
+{
+"cp-1": {
+    "root": [
+    {"id": "note-1", "title": "...", "parentId": null}
+    // ... other notes
+    ],
+    "note-1": [
+    // child notes
+    ]
+}
+// ... other checkpoints
+}
+
+**Example Valid Response Format**
+```json
+{json.dumps(data.canvasHierarchy, indent=2)}
