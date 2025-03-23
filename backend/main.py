@@ -1040,3 +1040,14 @@ async def update_hierarchy(data: UpdateHierarchyRequest):
     print(manager.get_knowledge_base())
 
     return manager.get_knowledge_base()
+
+@app.post("/api/feedback")
+async def receive_feedback(canvas_data: CanvasHierarchyModel):
+# async def receive_feedback(): 
+    try:
+        # Process the canvas hierarchy data
+        # This is where you would add your logic to handle the feedback
+        
+        return {"status": "success", "message": "Feedback received successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing feedback: {str(e)}")

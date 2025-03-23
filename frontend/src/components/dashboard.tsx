@@ -309,7 +309,25 @@ export default function Dashboard() {
       (note) => (note.id === id ? { ...note, ...updatedNote } : note),
     );
     setCanvasHierarchy(updatedHierarchy);
-    // Optional: Call backend API to edit note (omitted for brevity)
+    
+    // Backend API request to get feedback 
+    try {
+      const response = await fetch("http://localhost:8000/api/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ canvasHierarchy: updatedHierarchy }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to send canvas feedback");
+      }
+      const data = await response.json()
+      console.log("Backend was properly triggered: ", data.message)
+    } catch (error) {
+      console.error("API error:", error);
+      toast.error("Failed to update canvas details.");
+    }
   };
 
   const handleNoteDelete = async (id: string) => {
