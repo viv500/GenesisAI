@@ -30,120 +30,398 @@ export default function Dashboard() {
   // Canvas navigation state
   const [canvasStack, setCanvasStack] = useState<string[]>(["root"])
   const [canvasHierarchy, setCanvasHierarchy] = useState<Record<string, Record<string, Note[]>>>({
-    "cp-1": {
-      root: [
-        {
-          id: "note-1",
-          title: "Inventory",
-          content: "Track and manage your inventory levels, suppliers, and procurement processes.",
-          position: { x: 100, y: 100 },
-          color: "bg-yellow-200",
-          sector: "inventory",
-          selected: false,
-          files: [],
-          parentId: null,
-        },
-        {
-          id: "note-2",
-          title: "Manufacturing",
-          content: "Monitor production processes, quality control, and operational efficiency.",
-          position: { x: 400, y: 100 },
-          color: "bg-blue-200",
-          sector: "manufacturing",
-          selected: false,
-          files: [],
-          parentId: null,
-        },
-        {
-          id: "note-3",
-          title: "Product Strategy",
-          content: "Plan product roadmaps, feature development, and market positioning.",
-          position: { x: 100, y: 350 },
-          color: "bg-green-200",
-          sector: "product",
-          selected: false,
-          files: [],
-          parentId: null,
-        },
-        {
-          id: "note-4",
-          title: "Human Operations",
-          content: "Manage recruitment, training, performance, and employee engagement.",
-          position: { x: 400, y: 350 },
-          color: "bg-purple-200",
-          sector: "human",
-          selected: false,
-          files: [],
-          parentId: null,
-        },
-      ],
-      "note-1": [
-        {
-          id: "note-1-1",
-          title: "Suppliers",
-          content: "List of key suppliers and contact information.",
-          position: { x: 100, y: 100 },
-          color: "bg-yellow-100",
-          sector: "inventory",
-          selected: false,
-          files: [],
-          parentId: "note-1",
-        },
-        {
-          id: "note-1-2",
-          title: "Stock Levels",
-          content: "Current inventory levels and reorder points.",
-          position: { x: 400, y: 100 },
-          color: "bg-yellow-100",
-          sector: "inventory",
-          selected: false,
-          files: [],
-          parentId: "note-1",
-        },
-      ],
-    },
-    "cp-2": {
-      root: [
-        {
-          id: "note-5",
-          title: "Inventory",
-          content: "Updated inventory management system implemented.",
-          position: { x: 100, y: 100 },
-          color: "bg-yellow-200",
-          sector: "inventory",
-          selected: false,
-          files: [],
-          parentId: null,
-        },
-        {
-          id: "note-6",
-          title: "Manufacturing",
-          content: "New production line added, increasing capacity by 30%.",
-          position: { x: 400, y: 100 },
-          color: "bg-blue-200",
-          sector: "manufacturing",
-          selected: false,
-          files: [],
-          parentId: null,
-        },
-      ],
-    },
-    "cp-3": {
-      root: [
-        {
-          id: "note-7",
-          title: "Product Strategy",
-          content: "New product line launched, targeting enterprise customers.",
-          position: { x: 100, y: 100 },
-          color: "bg-green-200",
-          sector: "product",
-          selected: false,
-          files: [],
-          parentId: null,
-        },
-      ],
-    },
-  })
+  "cp-1": {
+    "root": [
+      {
+        "id": "note-1",
+        "title": "Inventory",
+        "content": "Track and manage your inventory levels, suppliers, and procurement processes.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-yellow-200",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      },
+      {
+        "id": "note-2",
+        "title": "Manufacturing",
+        "content": "Monitor production processes, quality control, and operational efficiency.",
+        "position": { "x": 400, "y": 100 },
+        "color": "bg-blue-200",
+        "sector": "manufacturing",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      },
+      {
+        "id": "note-3",
+        "title": "Product Strategy",
+        "content": "Plan product roadmaps, feature development, and market positioning.",
+        "position": { "x": 100, "y": 350 },
+        "color": "bg-green-200",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      },
+      {
+        "id": "note-4",
+        "title": "Human Operations",
+        "content": "Manage recruitment, training, performance, and employee engagement.",
+        "position": { "x": 400, "y": 350 },
+        "color": "bg-purple-200",
+        "sector": "human",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      }
+    ],
+    "note-1": [
+      {
+        "id": "note-1-1",
+        "title": "Suppliers",
+        "content": "List of key suppliers and contact information.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-yellow-100",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": "note-1"
+      },
+      {
+        "id": "note-1-2",
+        "title": "Stock Levels",
+        "content": "Current inventory levels and reorder points.",
+        "position": { "x": 400, "y": 100 },
+        "color": "bg-yellow-100",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": "note-1"
+      },
+      {
+        "id": "note-1-3",
+        "title": "Eco-Friendly Inventory Sourcing",
+        "content": "Evaluate suppliers based on sustainability criteria and eco-friendly practices.",
+        "position": { "x": 100, "y": 200 },
+        "color": "bg-green-100",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": "note-1"
+      },
+      {
+        "id": "note-1-4",
+        "title": "Waste Reduction Metrics",
+        "content": "Integrate data analytics to track and reduce waste in storage and handling.",
+        "position": { "x": 300, "y": 200 },
+        "color": "bg-green-100",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": "note-1"
+      },
+      {
+        "id": "note-1-5",
+        "title": "Resource Optimization",
+        "content": "Apply AI to optimize inventory levels, reducing overstock and spoilage.",
+        "position": { "x": 500, "y": 200 },
+        "color": "bg-green-100",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": "note-1"
+      },
+      {
+        "id": "note-1-6",
+        "title": "Sustainability Partnerships",
+        "content": "Develop collaborations with green tech partners to enhance supply chain sustainability.",
+        "position": { "x": 700, "y": 200 },
+        "color": "bg-green-100",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": "note-1"
+      }
+    ],
+    "note-2": [
+      {
+        "id": "note-2-1",
+        "title": "Eco-Efficient Production Methods",
+        "content": "Adopt sustainable manufacturing processes to minimize energy usage.",
+        "position": { "x": 400, "y": 150 },
+        "color": "bg-blue-100",
+        "sector": "manufacturing",
+        "selected": false,
+        "files": [],
+        "parentId": "note-2"
+      },
+      {
+        "id": "note-2-2",
+        "title": "Maintenance Predictive Analytics",
+        "content": "Use AI to predict maintenance needs, reducing downtime and resource waste.",
+        "position": { "x": 600, "y": 150 },
+        "color": "bg-blue-100",
+        "sector": "manufacturing",
+        "selected": false,
+        "files": [],
+        "parentId": "note-2"
+      },
+      {
+        "id": "note-2-3",
+        "title": "Sustainable Material Sourcing",
+        "content": "Integrate AI insights to source eco-friendly materials for production.",
+        "position": { "x": 800, "y": 150 },
+        "color": "bg-blue-100",
+        "sector": "manufacturing",
+        "selected": false,
+        "files": [],
+        "parentId": "note-2"
+      },
+      {
+        "id": "note-2-4",
+        "title": "Energy Cost Optimization",
+        "content": "Leverage operational data to reduce energy costs and emissions in manufacturing.",
+        "position": { "x": 1000, "y": 150 },
+        "color": "bg-blue-100",
+        "sector": "manufacturing",
+        "selected": false,
+        "files": [],
+        "parentId": "note-2"
+      }
+    ],
+    "note-3": [
+      {
+        "id": "note-3-1",
+        "title": "Sustainable Product Roadmap",
+        "content": "Plan product features that integrate eco-friendly technologies and materials.",
+        "position": { "x": 100, "y": 450 },
+        "color": "bg-green-100",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-3"
+      },
+      {
+        "id": "note-3-2",
+        "title": "Market Positioning for Sustainability",
+        "content": "Define your market niche by emphasizing sustainability and cost savings.",
+        "position": { "x": 300, "y": 450 },
+        "color": "bg-green-100",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-3"
+      },
+      {
+        "id": "note-3-3",
+        "title": "Competitive Analysis with ESG Focus",
+        "content": "Analyze competitors’ sustainability metrics and use them to refine your strategy.",
+        "position": { "x": 500, "y": 450 },
+        "color": "bg-green-100",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-3"
+      },
+      {
+        "id": "note-3-4",
+        "title": "Customer-Centric Sustainable Design",
+        "content": "Incorporate customer feedback on eco-friendly features into your product strategy.",
+        "position": { "x": 700, "y": 450 },
+        "color": "bg-green-100",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-3"
+      }
+    ],
+    "note-4": [
+      {
+        "id": "note-4-1",
+        "title": "Green Talent Recruitment",
+        "content": "Focus on hiring experts in sustainability and green technology.",
+        "position": { "x": 400, "y": 400 },
+        "color": "bg-purple-100",
+        "sector": "human",
+        "selected": false,
+        "files": [],
+        "parentId": "note-4"
+      },
+      {
+        "id": "note-4-2",
+        "title": "Sustainability Training Programs",
+        "content": "Implement training to improve employee awareness of eco-friendly practices.",
+        "position": { "x": 600, "y": 400 },
+        "color": "bg-purple-100",
+        "sector": "human",
+        "selected": false,
+        "files": [],
+        "parentId": "note-4"
+      },
+      {
+        "id": "note-4-3",
+        "title": "Performance Incentives for Green Practices",
+        "content": "Develop incentive programs to reward sustainable performance and innovation.",
+        "position": { "x": 800, "y": 400 },
+        "color": "bg-purple-100",
+        "sector": "human",
+        "selected": false,
+        "files": [],
+        "parentId": "note-4"
+      },
+      {
+        "id": "note-4-4",
+        "title": "Collaborative Sustainability Initiatives",
+        "content": "Encourage cross-department collaboration on eco-innovation projects.",
+        "position": { "x": 1000, "y": 400 },
+        "color": "bg-purple-100",
+        "sector": "human",
+        "selected": false,
+        "files": [],
+        "parentId": "note-4"
+      }
+    ]
+  },
+  "cp-2": {
+    "root": [
+      {
+        "id": "note-5",
+        "title": "Inventory",
+        "content": "Updated inventory management system implemented.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-yellow-200",
+        "sector": "inventory",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      },
+      {
+        "id": "note-6",
+        "title": "Manufacturing",
+        "content": "New production line added, increasing capacity by 30%.",
+        "position": { "x": 400, "y": 100 },
+        "color": "bg-blue-200",
+        "sector": "manufacturing",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      }
+    ]
+  },
+  "cp-3": {
+    "root": [
+      {
+        "id": "note-7",
+        "title": "Product Strategy",
+        "content": "New product line launched, targeting enterprise customers.",
+        "position": { "x": 100, "y": 100 },
+        "color": "bg-green-200",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      }
+    ]
+  },
+  "cp-4": {
+    "root": [
+      {
+        "id": "note-8",
+        "title": "Startup Idea: EcoSynth AI",
+        "content": "AI-Driven Sustainable Resource Optimization platform that helps enterprises slash waste and energy costs by analyzing operational data, predicting maintenance needs, and optimizing supply chains. Targets manufacturing, logistics, and agriculture while integrating generative AI to propose eco-friendly materials/processes and track ESG sustainability metrics.",
+        "position": { "x": 50, "y": 50 },
+        "color": "bg-teal-200",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": null
+      },
+      {
+        "id": "note-9",
+        "title": "Key Resources",
+        "content": "Utilizes open-source ML frameworks (TensorFlow, PyTorch), cloud GPU credits via AWS Activate or Google Cloud for Startups, and partnerships with universities like MIT Climate & Sustainability Consortium and Stanford’s Precourt Institute.",
+        "position": { "x": 300, "y": 50 },
+        "color": "bg-teal-300",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-8"
+      },
+      {
+        "id": "note-10",
+        "title": "Target Locations",
+        "content": "Ideal locations include Austin (Texas) for its AI talent and industry access, Berlin (Germany) for EU climate grants, Toronto (Canada) for research access via Vector Institute, and Singapore as a gateway to Asia’s manufacturing hubs. Bootstrapping may begin in a cost-effective hub like Prague.",
+        "position": { "x": 550, "y": 50 },
+        "color": "bg-teal-300",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-8"
+      },
+      {
+        "id": "note-11",
+        "title": "Industry Applications",
+        "content": "EcoSynth AI applies to industries such as manufacturing, logistics, and agriculture, optimizing supply chains, reducing waste, and lowering energy consumption.",
+        "position": { "x": 50, "y": 250 },
+        "color": "bg-teal-300",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-8"
+      },
+      {
+        "id": "note-12",
+        "title": "Funding & Accelerators",
+        "content": "Leverage programs like Techstars Sustainability, Y Combinator, and federal funding (e.g., SDTC in Canada) for mentorship and seed capital.",
+        "position": { "x": 300, "y": 250 },
+        "color": "bg-teal-300",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-8"
+      },
+      {
+        "id": "note-13",
+        "title": "Sustainability Metrics",
+        "content": "Implement systems to track ESG compliance, energy usage, waste reduction, and other sustainability metrics.",
+        "position": { "x": 550, "y": 250 },
+        "color": "bg-teal-300",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-8"
+      }
+    ],
+    "note-8": [
+      {
+        "id": "note-8-1",
+        "title": "Value Proposition",
+        "content": "EcoSynth AI offers a unique value by combining real-time operational data with advanced AI analytics to propose sustainable, cost-saving measures.",
+        "position": { "x": 50, "y": 150 },
+        "color": "bg-teal-100",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-8"
+      },
+      {
+        "id": "note-8-2",
+        "title": "Competitive Edge",
+        "content": "Integrates generative AI for eco-friendly material suggestions and sustainability tracking, differentiating it from traditional resource management systems.",
+        "position": { "x": 300, "y": 150 },
+        "color": "bg-teal-100",
+        "sector": "product",
+        "selected": false,
+        "files": [],
+        "parentId": "note-8"
+      }
+    ]
+  }
+}
+
+)
 
   // Feedback panel state
   const [feedbackItems, setFeedbackItems] = useState<FeedbackItem[]>([])
