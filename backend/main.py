@@ -1251,7 +1251,6 @@ class UpdateHierarchyRequest(BaseModel):
     canvasHierarchy: Dict[str, Dict[str, List[Dict]]]  # More specific typing
 
 # Configure Gemini
-#genai.configure(api_key="AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU")
 #model = genai.GenerativeModel('gemini-1.5-pro')
 
 
@@ -1259,7 +1258,7 @@ class UpdateHierarchyRequest(BaseModel):
 @app.post("/api/update-hierarchy")
 async def update_hierarchy(data: UpdateHierarchyRequest):
     #OPEN JASON FILE HERE
-    manager = HierarchicalDataManager("AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU", data.canvasHierarchy)
+    manager = HierarchicalDataManager(os.getenv("GEMINI_API_KEY"), data.canvasHierarchy)
 
     #ENTER PROMPT HERE
     result = manager.process_information(data.question)
@@ -1274,7 +1273,7 @@ async def update_hierarchy(data: UpdateHierarchyRequest):
 async def receive_feedback(canvas_data: CanvasHierarchyModel):
     try:
         # Process the canvas hierarchy data
-        manager = HierarchicalDataManager("AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU", canvas_data.canvasHierarchy)
+        manager = HierarchicalDataManager(os.getenv("GEMINI_API_KEY"), canvas_data.canvasHierarchy)
         response = manager.generate_feedback()
         
         if response["message"] == "Error occurred":
