@@ -5,13 +5,16 @@ from models import StickyNote, StickyNoteTree
 import json
 import google.generativeai as genai
 import os
+import asyncio
 from datetime import datetime
 import time
+from fastapi.responses import StreamingResponse
 
 # Create an instance of the FastAPI class
 app = FastAPI()
 
 from fastapi.middleware.cors import CORSMiddleware
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -128,6 +131,7 @@ def edit_sticky(data: EditStickyNoteRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating sticky note: {str(e)}")
 
+
 @app.delete("/api/delete-sticky")
 def delete_sticky(data: DeleteStickyNoteRequest):
     """
@@ -181,6 +185,7 @@ def get_sticky_tree():
     """
     Returns all sticky notes in a tree format.
     """
+    print("d")
     try:
         # Convert the tree to a dictionary format for JSON response
         tree_data = tree.to_dict()
