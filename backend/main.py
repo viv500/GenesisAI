@@ -762,7 +762,12 @@ class HierarchicalDataManager:
         for checkpoint, data in self.knowledge_base.items():
             for parent_id, notes in data.items():
                 for note in notes:
-                    note["selected"] = True
+                    # Convert 'selected' to proper Python boolean if it's a string
+                    if isinstance(note.get("selected"), str) or False:
+                        note["selected"] = note["selected"].lower() == "true"
+                    # Make sure None is converted to False
+                    if note.get("selected") is None:
+                        note["selected"] = False
                     # Convert parentId None string to actual None
                     if isinstance(note.get("parentId"), str) and note["parentId"].lower() == "none":
                         note["parentId"] = None
@@ -776,14 +781,12 @@ from models import StickyNote, StickyNoteTree
 import json
 import google.generativeai as genai
 import os
-import asyncio
 from datetime import datetime
 import time
 # Create an instance of the FastAPI class
 app = FastAPI()
 
 from fastapi.middleware.cors import CORSMiddleware
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -900,7 +903,6 @@ def edit_sticky(data: EditStickyNoteRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating sticky note: {str(e)}")
 
-
 @app.delete("/api/delete-sticky")
 def delete_sticky(data: DeleteStickyNoteRequest):
     """
@@ -954,7 +956,6 @@ def get_sticky_tree():
     """
     Returns all sticky notes in a tree format.
     """
-    print("d")
     try:
         # Convert the tree to a dictionary format for JSON response
         tree_data = tree.to_dict()
@@ -1015,6 +1016,176 @@ async def analyze_business(data: BusinessInfo):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/updateCanvas")
+async def update_canvas(data: CanvasHierarchyModel):
+    try:
+        # Define the new hierarchy structure
+        new_canvas_hierarchy = {
+            "cp-1": {
+                "root": [
+                    {
+                        "id": "note-1",
+                        "title": "Inventory",
+                        "content": "Track and manage your inventory levels, suppliers, and procurement processes.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-200",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-2",
+                        "title": "Manufacturing",
+                        "content": "Monitor production processes, quality control, and operational efficiency.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-blue-200",
+                        "sector": "manufacturing",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-3",
+                        "title": "Product Strategy",
+                        "content": "Plan product roadmaps, feature development, and market positioning.",
+                        "position": {"x": 100, "y": 350},
+                        "color": "bg-green-200",
+                        "sector": "product",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-4",
+                        "title": "Human Operations",
+                        "content": "Manage recruitment, training, performance, and employee engagement.",
+                        "position": {"x": 400, "y": 350},
+                        "color": "bg-purple-200",
+                        "sector": "human",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-5",
+                        "title": "please please please",
+                        "content": "sabrina carpenter",
+                        "position": {"x": 800, "y": 350},
+                        "color": "bg-purple-200",
+                        "sector": "music",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    }
+                ],
+                "note-1": [
+                    {
+                        "id": "note-1-1",
+                        "title": "Suppliers",
+                        "content": "List of key suppliers and contact information.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-1-2",
+                        "title": "Stock Levels",
+                        "content": "Current inventory levels and reorder points.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    }
+                ],
+                "note-5": [
+                    {
+                        "id": "note-1-1",
+                        "title": "Suppliers",
+                        "content": "List of key suppliers and contact information.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-1-2",
+                        "title": "Stock Levels",
+                        "content": "Current inventory levels and reorder points.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-yellow-100",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": "note-1",
+                        "zIndex": 1,
+                    }
+                ]
+            },
+            "cp-2": {
+                "root": [
+                    {
+                        "id": "note-5",
+                        "title": "Inventory",
+                        "content": "Updated inventory management system implemented.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-yellow-200",
+                        "sector": "inventory",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    },
+                    {
+                        "id": "note-6",
+                        "title": "Manufacturing",
+                        "content": "New production line added, increasing capacity by 30%.",
+                        "position": {"x": 400, "y": 100},
+                        "color": "bg-blue-200",
+                        "sector": "manufacturing",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    }
+                ]
+            },
+            "cp-3": {
+                "root": [
+                    {
+                        "id": "note-7",
+                        "title": "Product Strategy",
+                        "content": "New product line launched, targeting enterprise customers.",
+                        "position": {"x": 100, "y": 100},
+                        "color": "bg-green-200",
+                        "sector": "product",
+                        "selected": False,
+                        "files": [],
+                        "parentId": None,
+                        "zIndex": 1,
+                    }
+                ]
+            }
+        }
+        # Return the new structure instead of modifying the incoming one
+        return new_canvas_hierarchy
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # NEW: Endpoint to update canvas hierarchy based on a user question
 class UpdateHierarchyRequest(BaseModel):
@@ -1030,7 +1201,7 @@ class UpdateHierarchyRequest(BaseModel):
 @app.post("/api/update-hierarchy")
 async def update_hierarchy(data: UpdateHierarchyRequest):
     #OPEN JASON FILE HERE
-    manager = HierarchicalDataManager("AIzaSyC49mSrXNKfVBNILEBnWE5W8b7QsCRhGRg", data.canvasHierarchy)
+    manager = HierarchicalDataManager("AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU", data.canvasHierarchy)
 
     #ENTER PROMPT HERE
     result = manager.process_information(data.question)
