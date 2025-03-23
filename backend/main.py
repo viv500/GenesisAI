@@ -5,6 +5,10 @@ import re
 import uuid
 from typing import Dict, List, Any, Tuple, Union
 
+# Add this to the imports section at the top of the file
+from pydantic import BaseModel, Field
+from typing import Dict, List, Any, Optional, Union, Set
+
 class HierarchicalDataManager:
     def __init__(self, gemini_api_key: str, initial_knowledge_base: Dict[str, Any] = None):
         """
@@ -1269,8 +1273,16 @@ async def update_hierarchy(data: UpdateHierarchyRequest):
 
     return manager.get_knowledge_base()
 
+# Add this new model class for the updated feedback endpoint
+class UpdatedNoteModel(BaseModel):
+    canvasHierarchy: Dict[str, Dict[str, List[Any]]]
+    updatedNote: Optional[Dict[str, Any]] = None
+    originalNote: Optional[Dict[str, Any]] = None
+    changes: Optional[Dict[str, bool]] = None
+
+# Update the feedback endpoint to use the new model and include note context
 @app.post("/api/feedback")
-async def receive_feedback(canvas_data: CanvasHierarchyModel):
+async def receive_feedback(data: UpdatedNoteModel):
     try:
         # Process the canvas hierarchy data
         manager = HierarchicalDataManager(os.getenv("GEMINI_API_KEY"), canvas_data.canvasHierarchy)
@@ -1286,3 +1298,4 @@ async def receive_feedback(canvas_data: CanvasHierarchyModel):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing feedback: {str(e)}")
+
