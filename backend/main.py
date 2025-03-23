@@ -1030,7 +1030,7 @@ class UpdateHierarchyRequest(BaseModel):
 @app.post("/api/update-hierarchy")
 async def update_hierarchy(data: UpdateHierarchyRequest):
     #OPEN JASON FILE HERE
-    manager = HierarchicalDataManager("AIzaSyD_8A1Le3Z1Te5Um38K7TuEppaIzhIqksU", data.canvasHierarchy)
+    manager = HierarchicalDataManager("AIzaSyC49mSrXNKfVBNILEBnWE5W8b7QsCRhGRg", data.canvasHierarchy)
 
     #ENTER PROMPT HERE
     result = manager.process_information(data.question)
